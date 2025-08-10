@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   Calendar,
+  Info,
 } from "lucide-react";
 
 import DashboardParticipantes from "./vigencias/2025/DashboardParticipantes";
@@ -21,11 +22,10 @@ import ParticleLogo from "../components/ParticleLogo";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("home");
-  const [expandedYear, setExpandedYear] = useState(null); // No expandido por defecto
+  const [expandedYear, setExpandedYear] = useState("2025");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
 
-  // Aseguramos que las claves del objeto sean strings
   const menuItems = useMemo(() => ({
     "2025": [
       { id: "cumplimiento-2025", label: "Cumplimiento PSPIC", icon: Target, color: "text-emerald-600" },
@@ -51,6 +51,13 @@ const Dashboard = () => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  useEffect(() => {
+
+    if (activeSection === "home" && expandedYear === "2025") {
+      return;
+    }
+  }, []);
 
   const renderContent = () => {
     const components = {
@@ -129,47 +136,74 @@ const Dashboard = () => {
             />
           )}
           <div className="h-full overflow-y-auto">
-            {/* Header del menú móvil */}
-            <div className="lg:hidden p-4 border-b border-gray-200 bg-white/90">
-              <h2 className="text-lg font-semibold text-gray-800">Navegación</h2>
+            <div className="lg:hidden p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+                <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                Navegación
+              </h2>
+              <div className="flex items-center mt-2 text-xs text-gray-500">
+                <Info className="w-3 h-3 mr-1" />
+                Toca en el año para ver las opciones
+              </div>
             </div>
 
             <nav className="mt-4 lg:mt-8 px-6">
               {["2025", "2026"].map((year) => {
                 const items = menuItems[year];
                 if (!items) return null;
+                const isExpanded = expandedYear === year;
+                const hasActiveItem = items.some(item => activeSection === item.id);
 
                 return (
                   <div key={year} className="mb-6">
                     <button
                       onClick={() => toggleYear(year)}
-                      className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-300 group"
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold rounded-xl transition-all duration-300 group ${hasActiveItem
+                          ? 'bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 shadow-md'
+                          : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50'
+                        }`}
                     >
                       <div className="flex items-center">
-                        <Calendar className="w-5 h-5 mr-3 text-indigo-500" />
+                        <Calendar className={`w-5 h-5 mr-3 ${hasActiveItem ? 'text-blue-600' : 'text-indigo-500'}`} />
                         <span className="text-lg font-bold">{year}</span>
+                        {hasActiveItem && (
+                          <div className="ml-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        )}
                       </div>
-                      <div className={`transform transition-transform duration-300 ${expandedYear === year ? 'rotate-180' : ''
+                      <div className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''
                         }`}>
-                        <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
+                        <ChevronDown className={`w-5 h-5 ${hasActiveItem ? 'text-blue-600' : 'text-gray-400 group-hover:text-indigo-500'}`} />
                       </div>
                     </button>
-                    <div className={`mt-3 transition-all duration-300 ease-out overflow-hidden ${expandedYear === year ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+
+
+                    <div className={`mt-3 transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      }`}>
                       <div className="ml-6 space-y-2">
-                        {items.map((item) => {
+                        {items.map((item, index) => {
                           const Icon = item.icon;
+                          const isActive = activeSection === item.id;
+
                           return (
                             <button
                               key={item.id}
                               onClick={() => handleSectionClick(item.id)}
-                              className={`w-full flex items-center px-4 py-3 text-sm rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${activeSection === item.id
-                                ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
-                                : "text-gray-600 hover:bg-white hover:text-gray-900"
+                              className={`w-full flex items-center px-4 py-3 text-sm rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${isActive
+                                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
+                                  : "text-gray-600 hover:bg-white hover:text-gray-900"
                                 }`}
+                              style={{
+
+                                animationDelay: `${index * 50}ms`
+                              }}
                             >
-                              <Icon className={`w-5 h-5 mr-3 ${activeSection === item.id ? 'text-white' : item.color
-                                }`} />
+                              <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : item.color}`} />
                               <span className="font-medium">{item.label}</span>
+                              {isActive && (
+                                <div className="ml-auto">
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                </div>
+                              )}
                             </button>
                           );
                         })}
@@ -178,6 +212,25 @@ const Dashboard = () => {
                   </div>
                 );
               })}
+
+              <div className="mt-8 px-4 py-3 bg-gray-50 rounded-xl">
+                <div className="text-xs text-gray-500 text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    Vigencias disponibles
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-center text-emerald-600">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
+                      2025 - Activa
+                    </div>
+                    <div className="flex items-center justify-center text-orange-600">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                      2026 - Próximamente
+                    </div>
+                  </div>
+                </div>
+              </div>
             </nav>
           </div>
         </aside>
