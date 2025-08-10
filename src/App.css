@@ -1,22 +1,18 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  /* Removemos el padding fijo y usamos responsive */
   padding: 0;
   text-align: center;
   
-  /* Agregamos padding responsive que no afecte el menú */
   min-height: 100vh;
 }
 
-/* Padding responsivo solo para el contenido principal, no para elementos fijos */
 @media (min-width: 1024px) {
   #root {
     padding: 2rem;
   }
 }
 
-/* Aseguramos que en móvil no haya padding que interfiera con elementos fixed */
 @media (max-width: 1023px) {
   #root {
     padding: 0;
