@@ -20,7 +20,7 @@ import ExportReportButton from "../components/common/ExportButton";
 import ParticleLogo from "../components/ParticleLogo";
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("home");
-  const [expandedYear, setExpandedYear] = useState(null);
+  const [expandedYear, setExpandedYear] = useState("2025");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
