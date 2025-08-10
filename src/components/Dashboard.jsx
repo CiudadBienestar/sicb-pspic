@@ -21,7 +21,7 @@ import ParticleLogo from "../components/ParticleLogo";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("home");
-  const [expandedYear, setExpandedYear] = useState("2025"); // Cambio: inicializar con 2025
+  const [expandedYear, setExpandedYear] = useState(null); // Inicializar como null
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
@@ -49,6 +49,8 @@ const Dashboard = () => {
   }, [activeSection]);
 
   const toggleYear = (year) => {
+    // Si clickeamos el año que ya está expandido, lo colapsamos
+    // Si clickeamos otro año, lo expandimos (sin colapsar el anterior si queremos múltiples)
     setExpandedYear(expandedYear === year ? null : year);
   };
 
@@ -57,13 +59,11 @@ const Dashboard = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Mejora: Al abrir el menú móvil, asegurar que se expanda el año correcto
+  // Mejora: Al abrir el menú móvil, asegurar que se expanda 2025 por defecto
   const toggleMobileMenu = () => {
     if (!isMobileMenuOpen) {
-      // Al abrir, expandir el año actual o por defecto 2025
-      if (activeSection.includes("2026")) {
-        setExpandedYear("2026");
-      } else {
+      // Al abrir el menú móvil, expandir 2025 por defecto si no hay año expandido
+      if (!expandedYear) {
         setExpandedYear("2025");
       }
     }
@@ -139,54 +139,64 @@ const Dashboard = () => {
 
       <div className="flex">
         <aside className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-72 bg-white/90 backdrop-blur-lg shadow-xl transition-transform duration-300 ease-in-out`}>
+          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/95 backdrop-blur-lg shadow-xl transition-transform duration-300 ease-in-out border-r border-gray-200`}>
           {isMobileMenuOpen && (
             <div
-              className="lg:hidden fixed inset-0 bg-black/20 -z-10"
+              className="lg:hidden fixed inset-0 bg-black/30 -z-10"
               onClick={() => setIsMobileMenuOpen(false)}
             />
           )}
           <div className="h-full overflow-y-auto">
-            <nav className="mt-8 px-6">
-              {Object.entries(menuItems).map(([year, items]) => (
-                <div key={year} className="mb-6">
-                  <button
-                    onClick={() => toggleYear(year)}
-                    className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-300 group"
-                  >
-                    <div className="flex items-center">
-                      <Calendar className="w-5 h-5 mr-3 text-indigo-500" />
-                      <span className="text-lg">{year}</span>
-                    </div>
-                    <div className={`transform transition-transform duration-300 ${expandedYear === year ? 'rotate-180' : ''
+            {/* Header del menú móvil */}
+            <div className="lg:hidden p-4 border-b border-gray-200 bg-white/90">
+              <h2 className="text-lg font-semibold text-gray-800">Navegación</h2>
+            </div>
+            
+            <nav className="mt-4 lg:mt-8 px-6">
+              {["2025", "2026"].map((year) => {
+                const items = menuItems[year];
+                if (!items) return null;
+                
+                return (
+                  <div key={year} className="mb-6">
+                    <button
+                      onClick={() => toggleYear(year)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-300 group"
+                    >
+                      <div className="flex items-center">
+                        <Calendar className="w-5 h-5 mr-3 text-indigo-500" />
+                        <span className="text-lg font-bold">{year}</span>
+                      </div>
+                      <div className={`transform transition-transform duration-300 ${expandedYear === year ? 'rotate-180' : ''
+                        }`}>
+                        <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
+                      </div>
+                    </button>
+                    <div className={`mt-3 transition-all duration-300 ease-out ${expandedYear === year ? 'max-h-96 opacity-100 visible' : 'max-h-0 opacity-0 invisible overflow-hidden'
                       }`}>
-                      <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
-                    </div>
-                  </button>
-                  <div className={`mt-3 transition-all duration-300 ease-out ${expandedYear === year ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-                    }`}>
-                    <div className="ml-6 space-y-2">
-                      {items.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => handleSectionClick(item.id)}
-                            className={`w-full flex items-center px-4 py-3 text-sm rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${activeSection === item.id
-                              ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
-                              : "text-gray-600 hover:bg-white hover:text-gray-900"
-                              }`}
-                          >
-                            <Icon className={`w-5 h-5 mr-3 ${activeSection === item.id ? 'text-white' : item.color
-                              }`} />
-                            <span className="font-medium">{item.label}</span>
-                          </button>
-                        );
-                      })}
+                      <div className="ml-6 space-y-2">
+                        {items.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => handleSectionClick(item.id)}
+                              className={`w-full flex items-center px-4 py-3 text-sm rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${activeSection === item.id
+                                ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
+                                : "text-gray-600 hover:bg-white hover:text-gray-900"
+                                }`}
+                            >
+                              <Icon className={`w-5 h-5 mr-3 ${activeSection === item.id ? 'text-white' : item.color
+                                }`} />
+                              <span className="font-medium">{item.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </nav>
           </div>
         </aside>
