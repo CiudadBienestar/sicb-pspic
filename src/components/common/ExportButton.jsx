@@ -3,7 +3,7 @@ import { usePdfGenerator } from "../../hooks/usePdfGenerator";
 
 export default function ExportReportButton({ containerId, title = "Reporte_PSPIC", className = "" }) {
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const { generatePDF } = usePDFGenerator();
+  const { generatePDF } = usePdfGenerator();
 
   const handleExport = async () => {
     setIsGenerating(true);
