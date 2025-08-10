@@ -8,7 +8,7 @@ import {
   Menu,
   X,
   Calendar,
-  } from "lucide-react";
+} from "lucide-react";
 
 import DashboardParticipantes from "./vigencias/2025/DashboardParticipantes";
 import DashboardIndicadores from "./vigencias/2025/DashboardIndicadores";
@@ -21,36 +21,25 @@ import ParticleLogo from "../components/ParticleLogo";
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("home");
-  const [expandedYear, setExpandedYear] = useState(null); // Inicializar como null
+  const [expandedYear, setExpandedYear] = useState(null); // No expandido por defecto
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
 
+  // Aseguramos que las claves del objeto sean strings
   const menuItems = useMemo(() => ({
-    2025: [
+    "2025": [
       { id: "cumplimiento-2025", label: "Cumplimiento PSPIC", icon: Target, color: "text-emerald-600" },
       { id: "indicadores-2025", label: "Indicadores", icon: BarChart3, color: "text-blue-600" },
       { id: "participantes-2025", label: "Participantes", icon: Users, color: "text-purple-600" },
     ],
-    2026: [
+    "2026": [
       { id: "cumplimiento-2026", label: "Cumplimiento PSPIC", icon: Target, color: "text-emerald-600" },
       { id: "indicadores-2026", label: "Indicadores", icon: BarChart3, color: "text-blue-600" },
       { id: "participantes-2026", label: "Participantes", icon: Users, color: "text-purple-600" },
     ],
   }), []);
 
-  // Mejora: Auto-expandir el año que contiene la sección activa
-  useEffect(() => {
-    if (activeSection.includes("2025")) {
-      setExpandedYear("2025");
-    } else if (activeSection.includes("2026")) {
-      setExpandedYear("2026");
-    }
-  }, [activeSection]);
-
   const toggleYear = (year) => {
-    // Si clickeamos el año que ya está expandido, lo colapsamos
-    // Si clickeamos otro año, lo expandimos (sin colapsar el anterior si queremos múltiples)
     setExpandedYear(expandedYear === year ? null : year);
   };
 
@@ -59,14 +48,7 @@ const Dashboard = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Mejora: Al abrir el menú móvil, asegurar que se expanda 2025 por defecto
   const toggleMobileMenu = () => {
-    if (!isMobileMenuOpen) {
-      // Al abrir el menú móvil, expandir 2025 por defecto si no hay año expandido
-      if (!expandedYear) {
-        setExpandedYear("2025");
-      }
-    }
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
@@ -151,12 +133,12 @@ const Dashboard = () => {
             <div className="lg:hidden p-4 border-b border-gray-200 bg-white/90">
               <h2 className="text-lg font-semibold text-gray-800">Navegación</h2>
             </div>
-            
+
             <nav className="mt-4 lg:mt-8 px-6">
               {["2025", "2026"].map((year) => {
                 const items = menuItems[year];
                 if (!items) return null;
-                
+
                 return (
                   <div key={year} className="mb-6">
                     <button
@@ -172,8 +154,7 @@ const Dashboard = () => {
                         <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
                       </div>
                     </button>
-                    <div className={`mt-3 transition-all duration-300 ease-out ${expandedYear === year ? 'max-h-96 opacity-100 visible' : 'max-h-0 opacity-0 invisible overflow-hidden'
-                      }`}>
+                    <div className={`mt-3 transition-all duration-300 ease-out overflow-hidden ${expandedYear === year ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                       <div className="ml-6 space-y-2">
                         {items.map((item) => {
                           const Icon = item.icon;
@@ -230,7 +211,7 @@ const ParticipantesPage = ({ year, setParticipantesGlobal }) => (
           Participantes {year}
         </h2>
         <p className="text-gray-600 mt-2">
-         Participantes Plan de Salud Pública de Intervenciones Colectivas
+          Participantes Plan de Salud Pública de Intervenciones Colectivas
         </p>
       </div>
       <ExportReportButton
