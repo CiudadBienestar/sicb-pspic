@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePDFGenerator } from "../../hooks/usePdfGenerator";
+import { usePDFGenerator } from "../../hooks/usePDFGenerator";
 
 export default function ExportReportButton({ containerId, title = "Reporte_PSPIC", className = "" }) {
   const [isGenerating, setIsGenerating] = React.useState(false);
