@@ -1,7 +1,7 @@
 import React from "react";
 import { useDashboard } from "../vigencias/2025/DashboardParticipantes";
 import columnsMap from "../../config/columnsMap";
-import { Users, Percent, BookOpenCheck, Goal, GraduationCap } from "../../icons/icons.js";
+import { Users, Percent, BookOpenCheck, Goal, GraduationCap } from "../../icons/icons";
 
 
 const SummaryCards = () => {
