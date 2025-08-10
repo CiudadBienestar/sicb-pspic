@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ChevronDown,
   Home,
@@ -18,9 +18,10 @@ import Filters from "../components/common/Filters";
 import ChartsSection from "../components/common/ChartsSection";
 import ExportReportButton from "../components/common/ExportButton";
 import ParticleLogo from "../components/ParticleLogo";
+
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("home");
-  const [expandedYear, setExpandedYear] = useState("2025");
+  const [expandedYear, setExpandedYear] = useState("2025"); // Cambio: inicializar con 2025
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
@@ -38,6 +39,15 @@ const Dashboard = () => {
     ],
   }), []);
 
+  // Mejora: Auto-expandir el año que contiene la sección activa
+  useEffect(() => {
+    if (activeSection.includes("2025")) {
+      setExpandedYear("2025");
+    } else if (activeSection.includes("2026")) {
+      setExpandedYear("2026");
+    }
+  }, [activeSection]);
+
   const toggleYear = (year) => {
     setExpandedYear(expandedYear === year ? null : year);
   };
@@ -47,7 +57,16 @@ const Dashboard = () => {
     setIsMobileMenuOpen(false);
   };
 
+  // Mejora: Al abrir el menú móvil, asegurar que se expanda el año correcto
   const toggleMobileMenu = () => {
+    if (!isMobileMenuOpen) {
+      // Al abrir, expandir el año actual o por defecto 2025
+      if (activeSection.includes("2026")) {
+        setExpandedYear("2026");
+      } else {
+        setExpandedYear("2025");
+      }
+    }
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
@@ -181,6 +200,7 @@ const Dashboard = () => {
     </div>
   );
 };
+
 const HomePage = ({ participantesGlobal }) => (
   <div className="max-w-6xl mx-auto space-y-12">
     <div className="text-center space-y-6">
@@ -191,6 +211,7 @@ const HomePage = ({ participantesGlobal }) => (
     </div>
   </div>
 );
+
 const ParticipantesPage = ({ year, setParticipantesGlobal }) => (
   <div className="space-y-8">
     <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
@@ -226,6 +247,7 @@ const ParticipantesPage = ({ year, setParticipantesGlobal }) => (
     )}
   </div>
 );
+
 const CumplimientoPage = ({ year }) => (
   <div className="space-y-8">
     <div>
@@ -248,6 +270,7 @@ const CumplimientoPage = ({ year }) => (
     )}
   </div>
 );
+
 const IndicadoresPage = ({ year }) => (
   <div className="space-y-8">
     <div>
@@ -271,6 +294,7 @@ const IndicadoresPage = ({ year }) => (
     )}
   </div>
 );
+
 const EmptyState = ({ icon: Icon, title, description, color }) => (
   <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-12 border border-white/20 shadow-xl text-center">
     <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${color} rounded-full mb-6 shadow-lg`}>
