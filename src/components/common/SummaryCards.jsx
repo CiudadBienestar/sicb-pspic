@@ -3,7 +3,6 @@ import { useDashboard } from "../vigencias/2025/DashboardParticipantes";
 import columnsMap from "../../config/columnsMap";
 import { Users, Percent, BookOpenCheck, Goal, GraduationCap } from "../../icons/icons";
 
-
 const SummaryCards = () => {
   const {
     tab,
