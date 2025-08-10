@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-const usePDFGenerator = () => {
+const usePdfGenerator = () => {
   const generatePDF = useCallback(async (elementId, filename = 'reporte.pdf', options = {}) => {
     try {
       const {
@@ -106,4 +106,4 @@ const applyCompatibleStyles = (element) => {
   });
 };
 
-export default usePDFGenerator;
+export default usePdfGenerator;
