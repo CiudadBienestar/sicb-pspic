@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import useGoogleSheetData from "../../../hooks/useGoogleSheetData";
 import { Eye } from "lucide-react";
 
-
 const SHEET_ID = "1yzHOO9ZHq9UFjNz4x73LGjv1SQ4DEUrZjzbXy8xX3i0";
 const SHEETS = {
   indicadores: { gid: "36239036" },
@@ -18,7 +17,7 @@ const columnasDeseadas = [
   "Ámbito",
   "Meta 2025",
   "Resultado 2025",
-  "Estado Indicador"
+  "Estado Indicador",
 ];
 
 const renderProgressBar = (valor) => {
@@ -118,7 +117,7 @@ const ModalInterpretacion = ({ isOpen, onClose, indicador }) => {
             </div>
 
             {/* Interpretación Indicador */}
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="bg-blue-50 rounded-lg p-4 mb-4">
               <h4 className="font-semibold text-blue-800 mb-3 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -129,6 +128,29 @@ const ModalInterpretacion = ({ isOpen, onClose, indicador }) => {
                 {indicador?.["Interpretación General de Resultados"] || "No hay interpretación disponible para este indicador."}
               </p>
             </div>
+
+            {/* Enlace a Evidencias */}
+            {indicador?.["Enlace URL evidencias indicadores"] && (
+              <div className="bg-green-50 rounded-lg p-4">
+                <h4 className="font-semibold text-green-800 mb-3 flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  Evidencias de implemtación Indicador
+                </h4>
+                <a
+                  href={indicador["Enlace URL evidencias indicadores"]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-green-700 hover:text-green-900 hover:underline font-medium transition-colors"
+                >
+                  <span className="break-all">Ver evidencias</span>
+                  <svg className="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            )}
           </div>
 
           {/* Pie de Página */}
@@ -376,88 +398,88 @@ function DashboardIndicadores() {
       </div>
 
       {/* Tabla de Datos */}
-<div className="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden">
-  <div className="p-4 border-b border-gray-200">
-    <h3 className="text-lg font-semibold text-gray-800">
-      Resultados ({datosFiltrados.length} indicadores)
-    </h3>
-  </div>
+      <div className="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800">
+            Resultados ({datosFiltrados.length} indicadores)
+          </h3>
+        </div>
 
-  <div className="overflow-x-auto">
-    <table className="min-w-full table-auto">
-      <thead className="bg-gray-50">
-        <tr>
-          {columnasDeseadas.map((col) => (
-            <th
-              key={col}
-              className="px-2 sm:px-3 py-3 sm:py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider min-w-[80px] max-w-[150px]"
-            >
-              {col}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody className="bg-white divide-y divide-gray-200">
-        {datosFiltrados.length > 0 ? (
-          datosFiltrados.map((fila, index) => (
-            <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
-              {columnasDeseadas.map((col) => (
-                <td
-                  key={col}
-                  className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm text-gray-900"
-                >
-                  {col === "Resultado 2025" ? (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 justify-center">
-                      <div className="w-10 sm:w-12 flex-shrink-0">
-                        {renderProgressBar(fila[col])}
-                      </div>
-                      <span className="text-xs text-gray-600 font-medium">
-                        {fila[col] || "0%"}
-                      </span>
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto">
+            <thead className="bg-gray-50">
+              <tr>
+                {columnasDeseadas.map((col) => (
+                  <th
+                    key={col}
+                    className="px-2 sm:px-3 py-3 sm:py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider min-w-[80px] max-w-[150px]"
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {datosFiltrados.length > 0 ? (
+                datosFiltrados.map((fila, index) => (
+                  <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
+                    {columnasDeseadas.map((col) => (
+                      <td
+                        key={col}
+                        className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm text-gray-900"
+                      >
+                        {col === "Resultado 2025" ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 justify-center">
+                            <div className="w-10 sm:w-12 flex-shrink-0">
+                              {renderProgressBar(fila[col])}
+                            </div>
+                            <span className="text-xs text-gray-600 font-medium">
+                              {fila[col] || "0%"}
+                            </span>
+                          </div>
+                        ) : col === "Estado Indicador" ? (
+                          <button
+                            onClick={() => abrirModal(fila)}
+                            className="text-blue-600 hover:text-blue-800 underline hover:no-underline transition-all duration-200 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-1 py-0.5"
+                            title="Ver interpretación del indicador"
+                          >
+                            {fila[col] || "Sin estado"}
+                          </button>
+                        ) : (
+                          <div className="max-w-[100px] sm:max-w-[130px]">
+                            <p className="line-clamp-2 leading-relaxed text-center" title={fila[col]}>
+                              {fila[col] || <span className="text-gray-400 italic">Sin datos</span>}
+                            </p>
+                          </div>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={columnasDeseadas.length} className="text-center py-12 text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <p className="text-lg font-medium">No se encontraron indicadores</p>
+                      <p className="text-sm">Ajustar los filtros para ver más resultados</p>
                     </div>
-                  ) : col === "Estado Indicador" ? (
-                    <button
-                      onClick={() => abrirModal(fila)}
-                      className="text-blue-600 hover:text-blue-800 underline hover:no-underline transition-all duration-200 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-1 py-0.5"
-                      title="Ver interpretación del indicador"
-                    >
-                      {fila[col] || "Sin estado"}
-                    </button>
-                  ) : (
-                    <div className="max-w-[100px] sm:max-w-[130px]">
-                      <p className="line-clamp-2 leading-relaxed text-center" title={fila[col]}>
-                        {fila[col] || <span className="text-gray-400 italic">Sin datos</span>}
-                      </p>
-                    </div>
-                  )}
-                </td>
-              ))}
-            </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={columnasDeseadas.length} className="text-center py-12 text-gray-500">
-              <div className="flex flex-col items-center">
-                <svg className="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p className="text-lg font-medium">No se encontraron indicadores</p>
-                <p className="text-sm">Ajustar los filtros para ver más resultados</p>
-              </div>
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-{/* Modal de Interpretación */}
-<ModalInterpretacion
-  isOpen={modalOpen}
-  onClose={cerrarModal}
-  indicador={indicadorSeleccionado}
-/>
+      {/* Modal de Interpretación */}
+      <ModalInterpretacion
+        isOpen={modalOpen}
+        onClose={cerrarModal}
+        indicador={indicadorSeleccionado}
+      />
     </div>
   );
 }
