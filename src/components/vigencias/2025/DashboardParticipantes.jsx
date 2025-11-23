@@ -63,7 +63,7 @@ const DashboardParticipantes = ({ children }) => {
           return sum + (isNaN(val) ? 0 : val);
         }, 0);
 
-        // Sumar ambos y actualizar el contexto
+        // Sumar ambos y actualizar
         if (setParticipantesGlobal) {
           setParticipantesGlobal(totalAcciones + totalProcesos);
         }
@@ -131,36 +131,32 @@ const DashboardParticipantes = ({ children }) => {
 
   return (
     <DashboardContext.Provider value={contextValue}>
-      {/* Header mejorado con mejor responsive y spacing */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-        {/* Tabs con mejor diseño */}
+
         <div className="flex flex-wrap gap-2">
           <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === "todo"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${tab === "todo"
                 ? "bg-blue-600 text-white shadow-md transform scale-105"
                 : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
-            }`}
+              }`}
             onClick={() => setTab("todo")}
           >
             📊 Ver Todo
           </button>
           <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === "acciones"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${tab === "acciones"
                 ? "bg-blue-600 text-white shadow-md transform scale-105"
                 : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
-            }`}
+              }`}
             onClick={() => setTab("acciones")}
           >
             📢 Acciones Informativas
           </button>
           <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === "procesos"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${tab === "procesos"
                 ? "bg-blue-600 text-white shadow-md transform scale-105"
                 : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
-            }`}
+              }`}
             onClick={() => setTab("procesos")}
           >
             🎓 Procesos Formativos
@@ -172,11 +168,10 @@ const DashboardParticipantes = ({ children }) => {
             Mostrar:
           </span>
           <button
-            className={`relative inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              showUnique
+            className={`relative inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${showUnique
                 ? "bg-green-600 text-white shadow-md"
                 : "bg-blue-600 text-white shadow-md"
-            } hover:shadow-lg transform hover:scale-105`}
+              } hover:shadow-lg transform hover:scale-105`}
             onClick={() => setShowUnique(!showUnique)}
           >
             {showUnique ? (
@@ -199,7 +194,7 @@ const DashboardParticipantes = ({ children }) => {
         <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
           <div className="flex items-center">
             <span className="text-blue-800 text-sm font-medium">
-              🔍 Filtros activos: 
+              🔍 Filtros activos:
             </span>
             <div className="ml-2 flex flex-wrap gap-2">
               {Object.entries(filters)

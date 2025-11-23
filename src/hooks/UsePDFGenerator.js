@@ -1,109 +1,102 @@
-import { useCallback } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+// src/hooks/usePdfGenerator.js
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas-pro";
 
-const usePDFGenerator = () => {
-  const generatePDF = useCallback(async (elementId, filename = 'reporte.pdf', options = {}) => {
+export default function usePdfGenerator() {
+  const generatePDF = async (
+    containerId,
+    fileName = "reporte.pdf",
+    options = {}
+  ) => {
     try {
-      const {
-        addCover = true,
-        title = 'Reporte de Participantes',
-        subtitle = 'Vigencia 2025',
-        margin = 20,
-        maxWidth = 180
-      } = options;
+      const input = document.getElementById(containerId);
+      if (!input) {
+        return {
+          success: false,
+          error: `Elemento con ID "${containerId}" no encontrado`,
+        };
+      }
 
-      const element = document.getElementById(elementId);
-      if (!element) throw new Error(`Elemento con ID "${elementId}" no encontrado`);
+      // 1. Esperar a que el contenido, especialmente los gráficos, esté completamente renderizado.
+      // Puedes usar una función de retardo si es necesario.
+      // Aquí simulamos una espera de 300ms.
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const clone = element.cloneNode(true);
-      applyCompatibleStyles(clone);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10; // Margen de 10mm
+      const contentWidth = pageWidth - 2 * margin;
 
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '-9999px';
-      tempContainer.style.width = element.offsetWidth + 'px';
-      tempContainer.style.backgroundColor = '#ffffff';
-      tempContainer.style.padding = '20px';
-      tempContainer.appendChild(clone);
-      document.body.appendChild(tempContainer);
+      // Opcional: Agregar portada
+      if (options.addCover) {
+        pdf.setFontSize(20);
+        pdf.text(
+          options.title || "Reporte PSPIC",
+          pageWidth / 2,
+          pageHeight / 2 - 10,
+          { align: "center" }
+        );
+        pdf.setFontSize(14);
+        pdf.text(
+          options.subtitle || "",
+          pageWidth / 2,
+          pageHeight / 2 + 10,
+          { align: "center" }
+        );
+        pdf.addPage();
+      }
 
-      const canvas = await html2canvas(clone, {
-        backgroundColor: '#ffffff',
-        scale: 2,
+      // 2. Convertir el contenedor en canvas
+      const canvas = await html2canvas(input, {
         useCORS: true,
-        allowTaint: true,
-        width: element.offsetWidth,
-        height: clone.scrollHeight,
-        ignoreElements: (el) =>
-          el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.classList.contains('no-pdf')
+        backgroundColor: "#ffffff",
+        logging: false,
+        scale: 2, // Mayor resolución
       });
 
-      document.body.removeChild(tempContainer);
+      const imgData = canvas.toDataURL("image/jpeg", 1.0); // Usar JPEG con alta calidad
 
-      const imgData = canvas.toDataURL('image/png');
-const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeight = (imgProps.height * contentWidth) / imgProps.width;
 
-const pageWidth = pdf.internal.pageSize.getWidth();
-const pageHeight = pdf.internal.pageSize.getHeight();
+      let position = margin;
+      let remainingHeight = pdfHeight;
+      let pageNumber = 1;
 
-// Ajustamos imagen al ancho máximo disponible y proporcionalmente la altura
-const padding = 10;
-const maxImgWidth = pageWidth - padding * 2;
-const imgWidth = maxImgWidth;
-const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // 3. Manejo multipágina y ajuste del contenido
+      while (remainingHeight > 0) {
+        if (pageNumber > 1) {
+          pdf.addPage();
+        }
 
-// Si la imagen es más alta que una página, vamos a dividirla en varias
-let position = 0;
-let heightLeft = imgHeight;
+        const currentHeightOnPage = Math.min(
+          remainingHeight,
+          pageHeight - 2 * margin
+        );
 
-if (addCover) {
-  pdf.setFillColor(14, 165, 233);
-  pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(22);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text(title, margin, 80, { maxWidth });
-  pdf.setFontSize(14);
-  pdf.text(subtitle, margin, 100, { maxWidth });
-  pdf.addPage();
-}
+        pdf.addImage(
+          imgData,
+          "JPEG",
+          margin,
+          position,
+          contentWidth,
+          pdfHeight
+        );
 
-// Paginación automática
-pdf.addImage(imgData, 'PNG', padding, position, imgWidth, imgHeight);
-heightLeft -= pageHeight;
+        remainingHeight -= currentHeightOnPage;
+        position -= currentHeightOnPage;
 
-while (heightLeft > 0) {
-  position = heightLeft - imgHeight;
-  pdf.addPage();
-  pdf.addImage(imgData, 'PNG', padding, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
-}
-      pdf.save(filename);
-      return { success: true, message: 'PDF generado exitosamente' };
+        pageNumber++;
+      }
+
+      pdf.save(fileName);
+      return { success: true };
     } catch (error) {
-      console.error('Error al generar el PDF:', error);
+      console.error("Error al generar PDF:", error);
       return { success: false, error: error.message };
     }
-  }, []);
+  };
 
   return { generatePDF };
-};
-
-// Función auxiliar
-const applyCompatibleStyles = (element) => {
-  const elements = element.querySelectorAll('*');
-  elements.forEach(el => {
-    const cls = el.classList;
-    if (cls.contains('bg-white')) el.style.backgroundColor = '#ffffff';
-    if (cls.contains('bg-gray-50')) el.style.backgroundColor = '#f9fafb';
-    if (cls.contains('bg-blue-50')) el.style.backgroundColor = '#eff6ff';
-    if (cls.contains('text-gray-800')) el.style.color = '#1f2937';
-    if (cls.contains('text-blue-600')) el.style.color = '#2563eb';
-    if (cls.contains('text-red-600')) el.style.color = '#dc2626';
-    if (cls.contains('border-gray-300')) el.style.borderColor = '#d1d5db';
-  });
-};
-
-export default usePDFGenerator;
+}

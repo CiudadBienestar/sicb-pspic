@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { useDashboard } from "../vigencias/2025/DashboardParticipantes";
 import columnsMap from "../../config/columnsMap";
 
-// Configuración centralizada
+
 const FILTER_CONFIG = {
   equipo: "Equipo/Problemática",
   entorno: "Entornos Abordados", 
@@ -13,7 +13,7 @@ const FILTER_CONFIG = {
 const FilterSelect = ({ label, field }) => {
   const { filters, setFilters, tab, acciones, procesos } = useDashboard();
 
-  // Memoizar función de obtención de datos
+  // función para obtener los datos
   const getData = useCallback(() => {
     switch (tab) {
       case 'acciones': return acciones;
@@ -22,16 +22,16 @@ const FilterSelect = ({ label, field }) => {
     }
   }, [tab, acciones, procesos]);
 
-  // Memoizar función de mapeo de columnas
+  // Mapeo de columnas
   const getColumnName = useCallback((field, dataType) => {
     return columnsMap[dataType]?.[field] || field;
   }, []);
 
-  // Memoizar valores únicos con dependencias específicas
+  // Valores únicos
   const values = useMemo(() => {
     let data = getData();
 
-    // Aplicar filtros existentes (excepto el actual)
+    // Aplicar filtros
     const otherFilters = Object.fromEntries(
       Object.entries(filters).filter(([key]) => key !== field)
     );
@@ -47,7 +47,7 @@ const FilterSelect = ({ label, field }) => {
           } else if (tab === 'procesos') {
             itemValue = item[getColumnName(filterKey, 'procesos')];
           } else {
-            // Para 'todo', intentar ambos tipos
+            // Ambos filtros
             itemValue = item[getColumnName(filterKey, 'acciones')] || 
                        item[getColumnName(filterKey, 'procesos')];
           }

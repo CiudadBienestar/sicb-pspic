@@ -33,7 +33,7 @@ const columnsMap = {
     indicador: "Indicador Aplicado",
     tipo: "Tipo de Indicador",
     ambito: "Ámbito",
-    resultado: "Resultado 2024",
+    resultado: "Resultado 2025",
     estado: "Estado Indicador",
     interpretacion: "Interpretación General de Resultados"
   },
