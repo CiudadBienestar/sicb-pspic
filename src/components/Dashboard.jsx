@@ -26,19 +26,19 @@ import ChartsSection from "../components/common/ChartsSection";
 import ExportReportButton from "../components/common/ExportButton";
 import ParticleLogo from "../components/ParticleLogo";
 
-import DashboardIncorporacionCB, { 
-  SummaryCardsCB, 
-  FiltersCB, 
-  ChartsCB,
-  DetalleActividadModal 
+import DashboardIncorporacionCB, {
+  SummaryCardsCB,
+  FiltersCB,
+  TablaActividades,
+  ChartsCB
 } from "./vigencias/2025/DashboardIncorporacionCB";
 
-import DashboardTalleres, { 
-  SummaryCardsTalleres, 
-  FiltersTalleres, 
-  ChartsTalleres, 
+import DashboardTalleres, {
+  SummaryCardsTalleres,
+  FiltersTalleres,
+  ChartsTalleres,
   TablaTalleres,
-  DetalleTallerModal 
+  DetalleTallerModal
 } from "./vigencias/2025/DashboardTalleres";
 
 // Constantes
@@ -59,7 +59,7 @@ const Dashboard = () => {
       return "home";
     }
   });
-  
+
   const [expandedYear, setExpandedYear] = useState(() => {
     try {
       return localStorage.getItem("expandedYear") || "2025";
@@ -67,7 +67,7 @@ const Dashboard = () => {
       return "2025";
     }
   });
-  
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
 
@@ -105,13 +105,13 @@ const Dashboard = () => {
   const handleSectionClick = (sectionId) => {
     setActiveSection(sectionId);
     setIsMobileMenuOpen(false);
-    
+
     try {
       localStorage.setItem("activeSection", sectionId);
     } catch (error) {
       console.error("Error saving to localStorage:", error);
     }
-    
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -143,10 +143,10 @@ const Dashboard = () => {
 
   const getBreadcrumb = () => {
     if (activeSection === "home") return "Inicio";
-    
+
     const match = activeSection.match(/^(.+)-(\d{4})$/);
     if (!match) return "Inicio";
-    
+
     const [, section, year] = match;
     return `${year} / ${SECTION_NAMES[section] || section}`;
   };
@@ -174,11 +174,10 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => handleSectionClick("home")}
-                className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
-                  activeSection === "home"
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${activeSection === "home"
                     ? "bg-blue-600 text-white shadow-lg"
                     : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                  }`}
                 aria-label="Ir a inicio"
                 aria-current={activeSection === "home" ? "page" : undefined}
               >
@@ -197,12 +196,11 @@ const Dashboard = () => {
       </header>
 
       <div className="flex">
-        <aside 
+        <aside
           role="navigation"
           aria-label="Menú principal"
-          className={`${
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/95 backdrop-blur-lg shadow-xl transition-transform duration-300 ease-in-out border-r border-gray-200`}
+          className={`${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/95 backdrop-blur-lg shadow-xl transition-transform duration-300 ease-in-out border-r border-gray-200`}
         >
           {isMobileMenuOpen && (
             <div
@@ -234,11 +232,10 @@ const Dashboard = () => {
                   <div key={year} className="mb-6">
                     <button
                       onClick={() => toggleYear(year)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold rounded-xl transition-all duration-300 group ${
-                        hasActiveItem
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold rounded-xl transition-all duration-300 group ${hasActiveItem
                           ? "bg-blue-50 text-blue-800 shadow-md border-l-4 border-blue-500"
                           : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
-                      }`}
+                        }`}
                       aria-expanded={isExpanded}
                       aria-controls={`menu-${year}`}
                       aria-label={`Expandir menú del año ${year}`}
@@ -250,18 +247,16 @@ const Dashboard = () => {
                           <div className="ml-2 w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                         )}
                       </div>
-                      <div className={`transform transition-transform duration-300 ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}>
+                      <div className={`transform transition-transform duration-300 ${isExpanded ? "rotate-180" : ""
+                        }`}>
                         <ChevronDown className={`w-5 h-5 ${hasActiveItem ? "text-blue-600" : "text-gray-400 group-hover:text-indigo-500"}`} />
                       </div>
                     </button>
 
-                    <div 
+                    <div
                       id={`menu-${year}`}
-                      className={`mt-3 transition-all duration-500 ease-in-out overflow-hidden ${
-                        isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                      }`}
+                      className={`mt-3 transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                        }`}
                     >
                       <div className="ml-6 space-y-2">
                         {items.map((item, index) => {
@@ -272,11 +267,10 @@ const Dashboard = () => {
                             <button
                               key={item.id}
                               onClick={() => handleSectionClick(item.id)}
-                              className={`w-full flex items-center px-4 py-3 text-sm rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${
-                                isActive
+                              className={`w-full flex items-center px-4 py-3 text-sm rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${isActive
                                   ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
                                   : "text-gray-600 hover:bg-white hover:text-gray-900"
-                              }`}
+                                }`}
                               style={{
                                 animationDelay: `${index * 50}ms`
                               }}
@@ -460,7 +454,7 @@ const IncorporacionCBPage = React.memo(({ year }) => (
         <SummaryCardsCB />
         <FiltersCB />
         <ChartsCB />
-        <DetalleActividadModal />
+        <TablaActividades />
       </DashboardIncorporacionCB>
     ) : (
       <EmptyState
