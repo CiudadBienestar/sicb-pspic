@@ -198,7 +198,7 @@ export const TablaActividades = () => {
     <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gradient-to-r from-orange-500 to-orange-600">
+          <thead className="bg-gradient-to-r from-blue-600 to-blue-600">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Id</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actividad</th>
@@ -531,3 +531,4 @@ export const DetalleActividadModal = () => {
 };
 
 export default DashboardIncorporacionCB;
+
