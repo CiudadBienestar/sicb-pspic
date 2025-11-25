@@ -190,14 +190,9 @@ export const FiltersCB = () => {
 };
 
 // Componente de Tabla de Actividades
+// Componente de Tabla de Actividades (simplificado - solo Id, Actividad, Poblaciones)
 export const TablaActividades = () => {
-  const { filteredData, setSelectedActividad } = useIncorporacionCB();
-  const premisas = ["Participación Significativa", "Cuerpo Territorio", "Ciudadanía Activa"];
-
-  const verificarCumplimiento = (valor) => {
-    const v = valor?.toLowerCase();
-    return v === "si" || v === "sí" || valor === "1";
-  };
+  const { filteredData } = useIncorporacionCB();
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
@@ -205,28 +200,22 @@ export const TablaActividades = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-orange-500 to-orange-600">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Id</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actividad</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Equipo</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Poblaciones</th>
-              {premisas.map(cap => (
-                <th key={cap} className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">{cap.split(" ")[0]}</th>
-              ))}
-              <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.map((item, index) => (
               <tr key={index} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-sm text-gray-900">{item["Actividad"]}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{item["Equipo/Problemática"]}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{item["Poblaciones"]}</td>
-                {premisas.map(cap => (
-                  <td key={cap} className="px-6 py-4 text-center">
-                    {verificarCumplimiento(item[cap]) ? <Check className="w-5 h-5 text-green-600 mx-auto" /> : <X className="w-5 h-5 text-red-400 mx-auto" />}
-                  </td>
-                ))}
-                <td className="px-6 py-4 text-center">
-                  <button onClick={() => setSelectedActividad(item)} className="text-orange-600 hover:text-orange-800 font-medium text-sm">Ver detalle</button>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {item["Id"] || "-"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {item["Actividad"] || "-"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {item["Poblaciones"] || "-"}
                 </td>
               </tr>
             ))}
