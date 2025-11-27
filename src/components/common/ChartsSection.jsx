@@ -10,17 +10,27 @@ import {
   XAxis,
   YAxis,
   Bar,
+  LabelList,
 } from "recharts";
-import { LabelList } from "recharts";
 import { useDashboard } from '../vigencias/2025/DashboardParticipantes';
 import columnsMap from "../../config/columnsMap";
 import { Download } from 'lucide-react';
 
-const COLORS = [
-  '#0ea5e9', '#22c55e', '#f97316', '#a855f7',
-  '#e11d48', '#14b8a6', '#facc15', '#3b82f6',
-  '#6366f1', '#ef4444', '#10b981', '#8b5cf6'
-];
+const COLOR_PALETTES = {
+  'curso': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'sexo': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'comuna': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'entorno': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'zona': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'preferencia': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'escolaridad': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'discapacidad': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+  'salud': ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6'],
+};
+
+const getColorPalette = (field) => {
+  return COLOR_PALETTES[field] || COLOR_PALETTES['curso'];
+};
 
 const camposGenerales = [
   { field: 'curso', label: 'Curso de Vida' },
@@ -39,7 +49,6 @@ const camposProcesos = [
 
 const ChartsSection = () => {
   const { tab, showUnique, filteredData } = useDashboard();
-  const [exportingChart, setExportingChart] = React.useState(null);
 
   const getColumnName = (field, type) =>
     columnsMap[type]?.[field] || field;
@@ -103,112 +112,142 @@ const ChartsSection = () => {
     return null;
   };
 
-  const downloadSVG = (svgElement, fileName) => {
-    const svgData = new XMLSerializer().serializeToString(svgElement);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    canvas.width = svgElement.clientWidth * 2;
-    canvas.height = svgElement.clientHeight * 2;
-    ctx.scale(2, 2);
-    
-    img.onload = () => {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      
-      const link = document.createElement('a');
-      link.download = `${fileName}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    };
-    
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    img.src = url;
-  };
+  // ========== FUNCIÓN DE DESCARGA MEJORADA ==========
+  const downloadChartAsPNG = (chartData, title, useBar = false, field) => {
+    const total = chartData.reduce((acc, item) => acc + item.value, 0);
+    const dataWithPercent = chartData.map(item => ({
+      ...item,
+      percent: ((item.value / total) * 100).toFixed(1)
+    }));
 
-  const handleExportChart = async (chartId, fileName) => {
-    setExportingChart(chartId);
-    
-    try {
-      // Esperar actualizar DOM
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Forzar render
-      for (let i = 0; i < 3; i++) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const container = document.getElementById(chartId);
-        if (container) {
-          container.style.display = 'none';
-          container.offsetHeight; // Trigger reflow
-          container.style.display = '';
+    const COLORS = getColorPalette(field); // Obtener paleta específica para este campo
+
+    if (useBar) {
+      // Generar gráfico de barras como SVG
+      const width = 600;
+      const barHeight = 35;
+      const height = Math.max(400, dataWithPercent.length * barHeight + 100);
+      const marginLeft = 150;
+      const marginRight = 120;
+      const marginTop = 60;
+      const chartWidth = width - marginLeft - marginRight;
+
+      const maxValue = Math.max(...dataWithPercent.map(d => d.value));
+
+      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+      svgContent += `<rect width="${width}" height="${height}" fill="white"/>`;
+      svgContent += `<text x="${width / 2}" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2937" font-family="Arial, sans-serif">${title}</text>`;
+      svgContent += `<text x="${width - 20}" y="35" text-anchor="end" font-size="12" fill="#6b7280" font-family="Arial, sans-serif">${total} total</text>`;
+
+      dataWithPercent.forEach((item, index) => {
+        const y = marginTop + index * barHeight;
+        const barWidth = (item.value / maxValue) * chartWidth;
+        const color = COLORS[index % COLORS.length];
+
+        // Etiqueta izquierda
+        const labelText = item.name.length > 18 ? item.name.substring(0, 18) + "..." : item.name;
+        svgContent += `<text x="${marginLeft - 10}" y="${y + barHeight / 2 + 4}" text-anchor="end" font-size="11" fill="#374151" font-family="Arial">${labelText}</text>`;
+
+        // Barra
+        svgContent += `<rect x="${marginLeft}" y="${y}" width="${barWidth}" height="${barHeight - 5}" fill="${color}" rx="3"/>`;
+
+        // Valor y porcentaje
+        svgContent += `<text x="${marginLeft + barWidth + 8}" y="${y + barHeight / 2 + 4}" text-anchor="start" font-size="11" font-weight="bold" fill="#374151" font-family="Arial">${item.value} (${item.percent}%)</text>`;
+      });
+
+      svgContent += `</svg>`;
+
+      convertSvgToPng(svgContent, title, width, height);
+
+    } else {
+      // Generar gráfico de pastel como SVG
+      const width = 500;
+      const height = 400;
+      const centerX = width / 2;
+      const centerY = 180;
+      const radius = 100;
+
+      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+      svgContent += `<rect width="${width}" height="${height}" fill="white"/>`;
+      svgContent += `<text x="${centerX}" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2937" font-family="Arial, sans-serif">${title}</text>`;
+      svgContent += `<text x="${width - 20}" y="35" text-anchor="end" font-size="12" fill="#6b7280" font-family="Arial, sans-serif">${total} total</text>`;
+
+      let angle = -90;
+      dataWithPercent.forEach((item, index) => {
+        const percentage = parseFloat(item.percent);
+        const sweepAngle = (percentage / 100) * 360;
+        const startAngle = angle;
+        const endAngle = startAngle + sweepAngle;
+
+        const startRad = (startAngle * Math.PI) / 180;
+        const endRad = (endAngle * Math.PI) / 180;
+
+        const x1 = centerX + radius * Math.cos(startRad);
+        const y1 = centerY + radius * Math.sin(startRad);
+        const x2 = centerX + radius * Math.cos(endRad);
+        const y2 = centerY + radius * Math.sin(endRad);
+
+        const largeArc = sweepAngle > 180 ? 1 : 0;
+        const color = COLORS[index % COLORS.length];
+
+        svgContent += `<path d="M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${color}"/>`;
+
+        // Etiqueta dentro del slice si es >= 5%
+        if (percentage >= 5) {
+          const midAngle = startAngle + sweepAngle / 2;
+          const midRad = (midAngle * Math.PI) / 180;
+          const labelRadius = radius * 0.65;
+          const labelX = centerX + labelRadius * Math.cos(midRad);
+          const labelY = centerY + labelRadius * Math.sin(midRad);
+          svgContent += `<text x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="bold" fill="white" font-family="Arial">${item.percent}%</text>`;
         }
-      }
-      
-      // Espera captura de imágen
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const chartContainer = document.getElementById(chartId);
-      if (!chartContainer) return;
-      
-      const svgElement = chartContainer.querySelector('svg');
-      if (!svgElement) return;
-      
-      downloadSVG(svgElement, fileName);
-      
-    } catch (error) {
-      console.error('Error al exportar:', error);
-    } finally {
-      setExportingChart(null);
+
+        angle = endAngle;
+      });
+
+      // Leyenda
+      const legendStartY = 310;
+      const legendStartX = 30;
+      const itemsPerRow = 3;
+      const itemWidth = 150;
+      const rowHeight = 22;
+
+      dataWithPercent.forEach((item, index) => {
+        const col = index % itemsPerRow;
+        const row = Math.floor(index / itemsPerRow);
+        const x = legendStartX + col * itemWidth;
+        const y = legendStartY + row * rowHeight;
+        const color = COLORS[index % COLORS.length];
+
+        svgContent += `<rect x="${x}" y="${y}" width="14" height="14" fill="${color}" rx="3"/>`;
+        const labelText = item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name;
+        svgContent += `<text x="${x + 20}" y="${y + 11}" font-size="10" fill="#374151" font-family="Arial">${labelText} (${item.value})</text>`;
+      });
+
+      svgContent += `</svg>`;
+
+      convertSvgToPng(svgContent, title, width, height);
     }
   };
 
-  // labels gráficas de pastel
-  const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 1.4;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const convertSvgToPng = (svgContent, title, width, height) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
 
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="#000"
-        textAnchor={x > cx ? 'start' : 'end'}
-        dominantBaseline="central"
-        fontSize="12"
-        fontWeight="bold"
-        fontFamily="Arial, sans-serif"
-      >
-        {`${name}: ${percent}%`}
-      </text>
-    );
-  };
-
-  // labels gráficas de barra
-  const CustomBarLabel = ({ x, y, width, height, value, payload }) => {
-    if (!value || !payload) return null;
-    
-    const percent = ((value / payload.total) * 100).toFixed(1);
-    
-    return (
-      <text
-        x={x + width + 5}
-        y={y + height / 2}
-        fontSize="11"
-        fill="#000"
-        textAnchor="start"
-        dominantBaseline="middle"
-        fontWeight="bold"
-        fontFamily="Arial, sans-serif"
-      >
-        {`${value} (${percent}%)`}
-      </text>
-    );
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      const link = document.createElement("a");
+      link.download = `${title.replace(/\s+/g, "_")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgContent)));
   };
 
   const renderChart = (field, label, useBar = false) => {
@@ -219,8 +258,8 @@ const ChartsSection = () => {
       total,
       percent: ((item.value / total) * 100).toFixed(1)
     }));
-    const chartId = `chart-${field}`;
-    const isExporting = exportingChart === chartId;
+
+    const COLORS = getColorPalette(field); // Obtener paleta específica para este campo
 
     return (
       <div key={field} className="bg-white p-4 rounded-lg shadow chart-card relative">
@@ -231,106 +270,71 @@ const ChartsSection = () => {
               {total} total
             </span>
             <button
-              onClick={() => handleExportChart(chartId, label)}
-              className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50"
+              onClick={() => downloadChartAsPNG(chartData, label, useBar, field)}
+              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="Descargar gráfico"
-              disabled={isExporting}
             >
               <Download className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {isExporting && (
-          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
-            <div className="text-sm text-gray-600">Preparando descarga...</div>
+        <div className="w-full">
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 40)}>
+              {useBar ? (
+                <BarChart
+                  layout="vertical"
+                  data={dataWithTotal}
+                  margin={{ top: 10, right: 30, left: 120, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="value">
+                    {dataWithTotal.map((_, i) => (
+                      <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              ) : (
+                <PieChart>
+                  <Pie
+                    data={dataWithTotal}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label={false}
+                  >
+                    {dataWithTotal.map((_, i) => (
+                      <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              )}
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500">
+              <p>No hay datos disponibles</p>
+            </div>
+          )}
+        </div>
+
+        {/* Leyenda para gráficos de pastel */}
+        {!useBar && chartData.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-3 mt-4 px-2">
+            {dataWithTotal.map((item, index) => (
+              <div key={index} className="flex items-center gap-2 px-2 py-1">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span className="text-xs font-medium">{item.name} ({item.percent}%)</span>
+              </div>
+            ))}
           </div>
         )}
-
-        <div className="w-full">
-          <div id={chartId}>
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 40)}>
-                {useBar ? (
-                  <BarChart
-                    layout="vertical"
-                    data={dataWithTotal}
-                    margin={{ 
-                      top: 10, 
-                      right: isExporting ? 150 : 30, 
-                      left: 120, 
-                      bottom: 5 
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      width={110}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <Tooltip content={isExporting ? null : <CustomTooltip />} />
-                    <Bar dataKey="value">
-                      <LabelList 
-                        dataKey="value"
-                        position="right"
-                        style={{ 
-                          display: isExporting ? 'block' : 'none',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          fill: '#000'
-                        }}
-                        content={({ x, y, value, index }) => {
-                          if (!isExporting || !value || !dataWithTotal[index]) return null;
-                          const item = dataWithTotal[index];
-                          return (
-                            <text
-                              x={x + 10}
-                              y={y + 4}
-                              fontSize="12"
-                              fill="#000"
-                              textAnchor="start"
-                              fontWeight="bold"
-                              fontFamily="Arial, sans-serif"
-                            >
-                              {`${value} (${item.percent}%)`}
-                            </text>
-                          );
-                        }}
-                      />
-                      {dataWithTotal.map((_, i) => (
-                        <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                ) : (
-                  <PieChart>
-                    <Pie
-                      data={dataWithTotal}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={isExporting ? 60 : 100}
-                      label={isExporting ? ({ name, percent }) => `${name}: ${percent}%` : false}
-                      labelLine={isExporting}
-                    >
-                      {dataWithTotal.map((_, i) => (
-                        <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={isExporting ? null : <CustomTooltip />} />
-                  </PieChart>
-                )}
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-500">
-                <p>No hay datos disponibles</p>
-              </div>
-            )}
-          </div>
-        </div>
 
         {invalidCount > 0 && (
           <div className="text-xs text-red-600 mt-2">
@@ -355,7 +359,7 @@ const ChartsSection = () => {
   return (
     <div className="mt-8">
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">Análisis por Categorías</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-2">📊 Análisis por Categorías</h3>
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>Total de registros: <strong>{data.length}</strong></span>
           <span>Modo: <strong>{showUnique ? 'Únicos' : 'Todos'}</strong></span>
