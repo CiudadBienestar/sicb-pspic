@@ -62,7 +62,7 @@ const DashboardTalleres = ({ children }) => {
 
   const stats = useMemo(() => {
     const totalTalleres = filteredData.length;
-    
+
     const talleresPorZona = {};
     filteredData.forEach(item => {
       const zona = item["Zona"] || "Sin Dato";
@@ -155,7 +155,7 @@ export const FiltersTalleres = () => {
         <Filter className="w-5 h-5 text-blue-600" />
         <h3 className="text-lg font-semibold text-gray-800">Filtros</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {filterConfig.map(({ key, label }) => {
           const options = getAvailableOptions(key);
@@ -200,7 +200,7 @@ export const FiltersTalleres = () => {
   );
 };
 
-// Componente de Tabla de Talleres (solo Fecha y Tema)
+//Tabla
 export const TablaTalleres = () => {
   const { filteredData, setSelectedTaller } = useTalleres();
 
@@ -220,6 +220,7 @@ export const TablaTalleres = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-blue-600 to-blue-500">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Id</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Fecha</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Tema</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
@@ -228,21 +229,38 @@ export const TablaTalleres = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.map((item, index) => (
               <tr key={index} className="hover:bg-gray-50 transition-colors">
+
+                {/* ID */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {item["Id"] || "-"}
+                </td>
+
+                {/* FECHA */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 mr-2 text-blue-600" />
                     {formatearFecha(item["Fecha Taller"])}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900">{item["Tema"] || "-"}</td>
+
+                {/* TEMA */}
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {item["Tema"] || "-"}
+                </td>
+
+                {/* ACCIONES */}
                 <td className="px-6 py-4 text-center">
-                  <button onClick={() => setSelectedTaller(item)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                  <button
+                    onClick={() => setSelectedTaller(item)}
+                    className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                  >
                     Ver detalle
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
+
         </table>
       </div>
       {filteredData.length === 0 && (
@@ -252,19 +270,19 @@ export const TablaTalleres = () => {
   );
 };
 
-// Paletas de colores sobrias y armoniosas
-const COLORS_ZONA = ['#6d28d9', '#7c3aed', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe']; // Púrpura oscuro a claro
-const COLORS_COMUNA = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
+// Paletas de colores
+const COLORS_ZONA = ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6', '#6366f1', '#ef4444', '#10b981', '#8b5cf6'];
+const COLORS_COMUNA = ['#0ea5e9', '#22c55e', '#f97316', '#a855f7', '#e11d48', '#14b8a6', '#facc15', '#3b82f6', '#6366f1', '#ef4444', '#10b981', '#8b5cf6'];
 
 
-// Componente PieChart
+// PieChart
 const PieChart = ({ data, title, colors }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const chartRef = useRef(null);
-  
+
   const total = data.reduce((sum, item) => sum + item.value, 0);
-  
+
   if (total === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -417,13 +435,12 @@ const PieChart = ({ data, title, colors }) => {
 };
 
 // Componente de Gráfico de Barras
-// Componente de Gráfico de Barras usando Recharts
 const BarChart = ({ data, title, colors }) => {
   const chartRef = useRef(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const total = data.reduce((sum, item) => sum + item.value, 0);
-  
+
   const chartData = data.map(item => ({
     name: item.label,
     value: item.value,
@@ -508,13 +525,13 @@ const BarChart = ({ data, title, colors }) => {
                     <text x="120" y={barY + 20} textAnchor="end" fontSize="12" fill="#374151" fontFamily="Arial">
                       {item.name.length > 15 ? item.name.substring(0, 15) + "..." : item.name}
                     </text>
-                    <rect 
-                      x="130" 
-                      y={barY + 5} 
-                      width={barWidth} 
-                      height="25" 
-                      fill={colors[index % colors.length]} 
-                      rx="3" 
+                    <rect
+                      x="130"
+                      y={barY + 5}
+                      width={barWidth}
+                      height="25"
+                      fill={colors[index % colors.length]}
+                      rx="3"
                       className="cursor-pointer hover:opacity-80 transition-opacity"
                       onMouseEnter={(e) => {
                         setHoveredIndex(index);
@@ -624,7 +641,7 @@ export const DetalleTallerModal = () => {
         </div>
 
         <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end border-t">
-          <button onClick={() => setSelectedTaller(null)} 
+          <button onClick={() => setSelectedTaller(null)}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
             Cerrar
           </button>
