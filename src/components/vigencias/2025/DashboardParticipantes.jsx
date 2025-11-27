@@ -4,6 +4,7 @@ import React, {
   useMemo,
   createContext,
   useContext,
+  useCallback,
 } from "react";
 import Papa from "papaparse";
 import columnsMap from "../../../config/columnsMap";
@@ -15,20 +16,16 @@ export const useDashboard = () => useContext(DashboardContext);
 const SHEET_ID = "1srJaMCHuNcwcKVyLbKOAREf03BNn88jeSkD5qyvN42E";
 
 const sheetConfig = {
-  acciones: {
-    gid: "759616433",
-  },
-  procesos: {
-    gid: "20459118",
-  },
+  acciones: { gid: "759616433" },
+  procesos: { gid: "20459118" },
 };
 
 const fetchSheet = async (gid) => {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
   const response = await fetch(url);
-  if (!response.ok) throw new Error("No se pudo cargar la hoja: " + response.status);
+  if (!response.ok) throw new Error(`Error ${response.status}: No se pudo cargar la hoja`);
   const csv = await response.text();
-  const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+  const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true, dynamicTyping: true });
   return data;
 };
 
@@ -38,37 +35,24 @@ const DashboardParticipantes = ({ children }) => {
   const [tab, setTab] = useState("todo");
   const [showUnique, setShowUnique] = useState(false);
   const [filters, setFilters] = useState({});
-  const [participantesGlobal, setParticipantesGlobal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const accionesData = await fetchSheet(sheetConfig.acciones.gid);
-        const procesosData = await fetchSheet(sheetConfig.procesos.gid);
+        setError(null);
+        const [accionesData, procesosData] = await Promise.all([
+          fetchSheet(sheetConfig.acciones.gid),
+          fetchSheet(sheetConfig.procesos.gid)
+        ]);
 
         setAcciones(accionesData);
         setProcesos(procesosData);
-
-        // Calcular el total de participantes para acciones
-        const totalAcciones = accionesData.reduce((sum, item) => {
-          const val = parseInt(item["Número de Participantes"] || "0", 10);
-          return sum + (isNaN(val) ? 0 : val);
-        }, 0);
-
-        // Calcular el total de participantes para procesos
-        const totalProcesos = procesosData.reduce((sum, item) => {
-          const val = parseInt(item["Número de Participantes"] || "0", 10);
-          return sum + (isNaN(val) ? 0 : val);
-        }, 0);
-
-        // Sumar ambos y actualizar el contexto
-        if (setParticipantesGlobal) {
-          setParticipantesGlobal(totalAcciones + totalProcesos);
-        }
       } catch (error) {
         console.error("Error cargando datos:", error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
@@ -77,25 +61,28 @@ const DashboardParticipantes = ({ children }) => {
     loadData();
   }, []);
 
-  const filteredAcciones = useMemo(() => {
-    return acciones.filter((item) => {
+  // Función helper para filtrar datos
+  const applyFilters = useCallback((data, columnMapType) => {
+    if (Object.keys(filters).length === 0) return data;
+    
+    return data.filter((item) => {
       return Object.entries(filters).every(([key, value]) => {
         if (!value || value === "Todos") return true;
-        const columnKey = columnsMap.acciones[key];
+        const columnKey = columnsMap[columnMapType][key];
         return item[columnKey] === value;
       });
     });
-  }, [acciones, filters]);
+  }, [filters]);
 
-  const filteredProcesos = useMemo(() => {
-    return procesos.filter((item) => {
-      return Object.entries(filters).every(([key, value]) => {
-        if (!value || value === "Todos") return true;
-        const columnKey = columnsMap.procesos[key];
-        return item[columnKey] === value;
-      });
-    });
-  }, [procesos, filters]);
+  const filteredAcciones = useMemo(() => 
+    applyFilters(acciones, 'acciones'), 
+    [acciones, applyFilters]
+  );
+
+  const filteredProcesos = useMemo(() => 
+    applyFilters(procesos, 'procesos'), 
+    [procesos, applyFilters]
+  );
 
   const filteredData = useMemo(() => {
     if (tab === "acciones") return filteredAcciones;
@@ -103,22 +90,62 @@ const DashboardParticipantes = ({ children }) => {
     return [...filteredAcciones, ...filteredProcesos];
   }, [tab, filteredAcciones, filteredProcesos]);
 
-  const contextValue = {
+  // Calcular participantes globales de forma optimizada
+  const participantesGlobal = useMemo(() => {
+    const sumParticipantes = (data) => 
+      data.reduce((sum, item) => {
+        const val = parseInt(item["Número de Participantes"] || "0", 10);
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
+
+    return sumParticipantes(acciones) + sumParticipantes(procesos);
+  }, [acciones, procesos]);
+
+  // Callbacks optimizados
+  const clearFilters = useCallback(() => setFilters({}), []);
+  
+  const removeFilter = useCallback((key) => {
+    setFilters(prev => ({ ...prev, [key]: "Todos" }));
+  }, []);
+
+  const toggleUnique = useCallback(() => {
+    setShowUnique(prev => !prev);
+  }, []);
+
+  const contextValue = useMemo(() => ({
     acciones,
     procesos,
     tab,
     setTab,
     showUnique,
     setShowUnique,
+    toggleUnique,
     filters,
     setFilters,
+    clearFilters,
+    removeFilter,
     filteredAcciones,
     filteredProcesos,
     filteredData,
     participantesGlobal,
-    setParticipantesGlobal,
     loading,
-  };
+    error,
+  }), [
+    acciones,
+    procesos,
+    tab,
+    showUnique,
+    filters,
+    filteredAcciones,
+    filteredProcesos,
+    filteredData,
+    participantesGlobal,
+    loading,
+    error,
+    toggleUnique,
+    clearFilters,
+    removeFilter,
+  ]);
 
   if (loading) {
     return (
@@ -129,79 +156,68 @@ const DashboardParticipantes = ({ children }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center py-12 text-center">
+        <div className="text-red-600 text-5xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">Error al cargar los datos</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  const hasActiveFilters = Object.values(filters).some(value => value && value !== "Todos");
+
   return (
     <DashboardContext.Provider value={contextValue}>
-      {/* Header mejorado con mejor responsive y spacing */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-        {/* Tabs con mejor diseño */}
         <div className="flex flex-wrap gap-2">
-          <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === "todo"
-                ? "bg-blue-600 text-white shadow-md transform scale-105"
-                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
-            }`}
-            onClick={() => setTab("todo")}
-          >
-            📊 Ver Todo
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === "acciones"
-                ? "bg-blue-600 text-white shadow-md transform scale-105"
-                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
-            }`}
-            onClick={() => setTab("acciones")}
-          >
-            📢 Acciones Informativas
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === "procesos"
-                ? "bg-blue-600 text-white shadow-md transform scale-105"
-                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
-            }`}
-            onClick={() => setTab("procesos")}
-          >
-            🎓 Procesos Formativos
-          </button>
+          {[
+            { key: "todo", icon: "📊", label: "Ver Todo" },
+            { key: "acciones", icon: "📢", label: "Acciones Informativas" },
+            { key: "procesos", icon: "🎓", label: "Procesos Formativos" }
+          ].map(({ key, icon, label }) => (
+            <button
+              key={key}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                tab === key
+                  ? "bg-blue-600 text-white shadow-md transform scale-105"
+                  : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
+              }`}
+              onClick={() => setTab(key)}
+            >
+              {icon} {label}
+            </button>
+          ))}
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600 font-medium">
-            Mostrar:
-          </span>
+          <span className="text-sm text-gray-600 font-medium">Mostrar:</span>
           <button
             className={`relative inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
               showUnique
                 ? "bg-green-600 text-white shadow-md"
                 : "bg-blue-600 text-white shadow-md"
             } hover:shadow-lg transform hover:scale-105`}
-            onClick={() => setShowUnique(!showUnique)}
+            onClick={toggleUnique}
           >
-            {showUnique ? (
-              <>
-                <span className="mr-2">👤</span>
-                Participantes Únicos
-              </>
-            ) : (
-              <>
-                <span className="mr-2">📈</span>
-                Totales
-              </>
-            )}
+            <span className="mr-2">{showUnique ? "👤" : "📈"}</span>
+            {showUnique ? "Participantes Únicos" : "Totales"}
           </button>
         </div>
       </div>
 
-      {/* Indicador de filtros activos */}
-      {Object.keys(filters).some(key => filters[key] && filters[key] !== "Todos") && (
+      {hasActiveFilters && (
         <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-          <div className="flex items-center">
-            <span className="text-blue-800 text-sm font-medium">
-              🔍 Filtros activos: 
-            </span>
-            <div className="ml-2 flex flex-wrap gap-2">
+          <div className="flex items-center flex-wrap gap-2">
+            <span className="text-blue-800 text-sm font-medium">🔍 Filtros activos:</span>
+            <div className="flex flex-wrap gap-2">
               {Object.entries(filters)
                 .filter(([_, value]) => value && value !== "Todos")
                 .map(([key, value]) => (
@@ -211,17 +227,17 @@ const DashboardParticipantes = ({ children }) => {
                   >
                     {key}: {value}
                     <button
-                      onClick={() => setFilters(prev => ({ ...prev, [key]: "Todos" }))}
-                      className="ml-1 text-blue-600 hover:text-blue-800"
+                      onClick={() => removeFilter(key)}
+                      className="ml-1 text-blue-600 hover:text-blue-800 font-bold"
+                      aria-label={`Eliminar filtro ${key}`}
                     >
                       ✕
                     </button>
                   </span>
-                ))
-              }
+                ))}
               <button
-                onClick={() => setFilters({})}
-                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                onClick={clearFilters}
+                className="text-xs text-blue-600 hover:text-blue-800 underline font-medium"
               >
                 Limpiar todos
               </button>
