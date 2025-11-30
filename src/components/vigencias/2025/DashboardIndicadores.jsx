@@ -42,9 +42,9 @@ const GaugeChart = ({ resultado, meta }) => {
   return (
     <div className="flex flex-col items-center justify-center" style={{ width: '80px', height: '60px' }}>
       <svg viewBox="0 0 100 60" className="w-full h-full">
-  <title>
-    Resultado: {porcentaje.toFixed(0)}% • Meta: {valorMeta}%
-  </title>
+        <title>
+          Resultado: {porcentaje.toFixed(0)}% • Meta: {valorMeta}%
+        </title>
 
         <path
           d="M 10 50 A 40 40 0 0 1 90 50"
@@ -90,7 +90,7 @@ const GaugeChart = ({ resultado, meta }) => {
 
       </svg>
 
-         </div>
+    </div>
   );
 };
 
@@ -262,6 +262,7 @@ function DashboardIndicadores() {
     );
   }, [indicadoresData, filtrosSeleccionados]);
 
+  // Reemplaza la sección de estadísticas con esta versión mejorada:
   const estadisticas = useMemo(() => {
     const equiposUnicos = new Set(datosFiltrados.map(item => item.Equipo)).size;
 
@@ -283,7 +284,19 @@ function DashboardIndicadores() {
       item["Estado Indicador"].toLowerCase().includes("meta no cumplida")
     ).length;
 
-    return { equiposUnicos, metaCumplida, metaNoCumplida };
+    // Calcular porcentaje promedio de cumplimiento
+    const resultadosValidos = datosFiltrados
+      .map(item => {
+        const resultado = parseFloat(item["Resultado 2025"]?.toString().replace("%", "").trim() || "0");
+        return isNaN(resultado) ? null : resultado;
+      })
+      .filter(val => val !== null);
+
+    const porcentajePromedio = resultadosValidos.length > 0
+      ? (resultadosValidos.reduce((a, b) => a + b, 0) / resultadosValidos.length).toFixed(1)
+      : 0;
+
+    return { equiposUnicos, metaCumplida, metaNoCumplida, porcentajePromedio };
   }, [datosFiltrados]);
 
   const handleFiltroChange = (e, filtro) => {
@@ -330,6 +343,7 @@ function DashboardIndicadores() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Indicadores */}
         <div className="bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl p-6 border border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -344,20 +358,7 @@ function DashboardIndicadores() {
           </div>
         </div>
 
-        <div className="bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl p-6 border border-gray-100">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-gray-500 text-sm font-medium mb-1">Equipos</h3>
-              <p className="text-2xl font-bold text-green-600">{estadisticas.equiposUnicos}</p>
-            </div>
-          </div>
-        </div>
-
+        {/* Meta Cumplida */}
         <div className="bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl p-6 border border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -372,6 +373,7 @@ function DashboardIndicadores() {
           </div>
         </div>
 
+        {/* Meta no Cumplida */}
         <div className="bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl p-6 border border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-red-100 rounded-lg">
@@ -382,6 +384,21 @@ function DashboardIndicadores() {
             <div>
               <h3 className="text-gray-500 text-sm font-medium mb-1">Meta no Cumplida</h3>
               <p className="text-2xl font-bold text-red-600">{estadisticas.metaNoCumplida}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Porcentaje Promedio - NUEVA TARJETA */}
+        <div className="bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl p-6 border border-gray-100">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-gray-500 text-sm font-medium mb-1">Cumplimiento Promedio</h3>
+              <p className="text-2xl font-bold text-purple-600">{estadisticas.porcentajePromedio}%</p>
             </div>
           </div>
         </div>
