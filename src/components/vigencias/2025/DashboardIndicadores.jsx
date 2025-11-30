@@ -20,7 +20,7 @@ const columnasDeseadas = [
   "Estado Indicador",
 ];
 
-// Componente Gauge personalizado
+// Componente gráfica indicadores
 const GaugeChart = ({ resultado, meta }) => {
   if (!resultado || resultado.trim() === "") {
     return <span className="text-gray-400 italic text-xs">Sin datos</span>;
@@ -388,7 +388,7 @@ function DashboardIndicadores() {
           </div>
         </div>
 
-        {/* Porcentaje Promedio - NUEVA TARJETA */}
+        {/* Porcentaje Promedio */}
         <div className="bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl p-6 border border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-purple-100 rounded-lg">
