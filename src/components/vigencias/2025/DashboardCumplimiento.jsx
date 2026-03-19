@@ -81,7 +81,7 @@ const ModalDetalleActividad = ({ isOpen, onClose, actividad }) => {
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-700 mb-2">Tecnologías</h4>
+                <h4 className="font-semibold text-gray-700 mb-2">Tecnologías PSPIC</h4>
                 <p className="text-gray-900">{actividad?.["Tecnologías"] || "No especificado"}</p>
               </div>
             </div>
@@ -143,16 +143,17 @@ const ModalDetalleActividad = ({ isOpen, onClose, actividad }) => {
   );
 };
 
-const filtros = ["Equipo", "Estado", "Entornos"];
+const filtros = ["Equipo", "Estado", "Entornos", "Tecnologías"];
 
 function DashboardActividades() {
   const { data, loading, error } = useGoogleSheetData(SHEET_ID, SHEETS);
   const actividadesData = data.actividades || [];
-  const [filtrosSeleccionados, setFiltrosSeleccionados] = useState({
-    Equipo: "",
-    Estado: "",
-    Entornos: "",
-  });
+ const [filtrosSeleccionados, setFiltrosSeleccionados] = useState({
+  Equipo: "",
+  Estado: "",
+  Entornos: "",
+  Tecnologías: "",
+});
 
   const [modalOpen, setModalOpen] = useState(false);
   const [actividadSeleccionada, setActividadSeleccionada] = useState(null);
@@ -307,12 +308,17 @@ function DashboardActividades() {
             <div className="bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl p-4 sm:p-6 border border-gray-100">
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="p-2 bg-purple-100 rounded-lg">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  <svg className="w-5 h-5 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d="M12 6a2 2 0 110-4 2 2 0 010 4zm0 16a2 2 0 110-4 2 2 0 010 4zM6 12a2 2 0 11-4 0 2 2 0 014 0zm16 0a2 2 0 11-4 0 2 2 0 014 0zM12 8v8m-6-4h12" />
                   </svg>
+
                 </div>
                 <div>
-                  <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Tecnologías</h3>
+                  <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Tecnologías PSPIC</h3>
                   <p className="text-xl sm:text-2xl font-bold text-purple-600">{estadisticas.tecnologias}</p>
                 </div>
               </div>
@@ -469,7 +475,7 @@ function DashboardActividades() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                           </svg>
                           <p className="text-lg font-medium">No se encontraron actividades</p>
-                          <p className="text-sm">Rajustar los filtros para ver más resultados</p>
+                          <p className="text-sm">Reajustar los filtros para ver más resultados</p>
                         </div>
                       </td>
                     </tr>

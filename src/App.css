@@ -1,6 +1,7 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
+<<<<<<< HEAD
   /* Removemos el padding fijo y usamos responsive */
   padding: 0;
   text-align: center;
@@ -10,13 +11,24 @@
 }
 
 /* Padding responsivo solo para el contenido principal, no para elementos fijos */
+=======
+  padding: 0;
+  text-align: center;
+  
+  min-height: 100vh;
+}
+
+>>>>>>> dc547ff02d04654333ee0b022411cc2e9ea9d857
 @media (min-width: 1024px) {
   #root {
     padding: 2rem;
   }
 }
 
+<<<<<<< HEAD
 /* Aseguramos que en móvil no haya padding que interfiera con elementos fixed */
+=======
+>>>>>>> dc547ff02d04654333ee0b022411cc2e9ea9d857
 @media (max-width: 1023px) {
   #root {
     padding: 0;

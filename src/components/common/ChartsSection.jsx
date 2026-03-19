@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -10,7 +10,6 @@ import {
   XAxis,
   YAxis,
   Bar,
-  LabelList,
 } from "recharts";
 import { useDashboard } from '../vigencias/2025/DashboardParticipantes';
 import columnsMap from "../../config/columnsMap";
@@ -23,87 +22,106 @@ const COLORS = [
 ];
 
 const camposGenerales = [
-  { field: 'curso', label: 'Curso de Vida' },
-  { field: 'sexo', label: 'Sexo' },
-  { field: 'comuna', label: 'Comuna/Corregimiento' },
+  { field: 'curso',   label: 'Curso de Vida' },
+  { field: 'sexo',    label: 'Sexo' },
+  { field: 'etnia',   label: 'Etnia' },
+  { field: 'comuna',  label: 'Comuna/Corregimiento' },
   { field: 'entorno', label: 'Entornos Abordados' },
-  { field: 'zona', label: 'Zona' }
+  { field: 'zona',    label: 'Zona' },
 ];
 
 const camposProcesos = [
-  { field: 'preferencia', label: 'Preferencia sexual' },
-  { field: 'escolaridad', label: 'Escolaridad' },
+  { field: 'preferencia',  label: 'Preferencia sexual' },
+  { field: 'escolaridad',  label: 'Escolaridad' },
   { field: 'discapacidad', label: 'Personas con discapacidad' },
-  { field: 'salud', label: 'Tipo de afiliación a salud' }
+  { field: 'salud',        label: 'Tipo de afiliación a salud' },
 ];
 
 const ChartsSection = () => {
   const { tab, showUnique, filteredData } = useDashboard();
 
-  const getColumnName = (field, type) =>
-    columnsMap[type]?.[field] || field;
+  const getColumnName = useCallback((field, type) =>
+    columnsMap[type]?.[field] || field, []);
 
-  const data = React.useMemo(() => {
+  const data = useMemo(() => {
     if (!showUnique) return filteredData;
-
     const seen = new Set();
     return filteredData.filter(row => {
-      const no = (row[getColumnName('no', 'acciones')] || row[getColumnName('no', 'procesos')])?.toString().trim();
+      const no = (
+        row[getColumnName('no', 'acciones')] ||
+        row[getColumnName('no', 'procesos')]
+      )?.toString().trim();
       if (!no || seen.has(no)) return false;
       seen.add(no);
       return true;
     });
-  }, [filteredData, showUnique]);
+  }, [filteredData, showUnique, getColumnName]);
 
-  const groupByField = (field) => {
+  const groupByField = useCallback((field) => {
     const count = {};
     let invalidCount = 0;
-
     data.forEach(item => {
       let value = '';
-
       if (tab === 'acciones') {
         value = item[getColumnName(field, 'acciones')];
       } else if (tab === 'procesos') {
         value = item[getColumnName(field, 'procesos')];
       } else {
-        value = item[getColumnName(field, 'acciones')] || item[getColumnName(field, 'procesos')];
+        value = item[getColumnName(field, 'acciones')] ||
+                item[getColumnName(field, 'procesos')];
       }
-
       let key = value?.toString().trim().toLowerCase() || '';
       key = key.charAt(0).toUpperCase() + key.slice(1);
-
-      if (key === '') {
-        invalidCount++;
-      } else {
-        count[key] = (count[key] || 0) + 1;
-      }
+      if (key === '') { invalidCount++; }
+      else { count[key] = (count[key] || 0) + 1; }
     });
-
     const result = Object.entries(count)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-
     return { data: result, invalidCount };
-  };
+  }, [data, tab, getColumnName]);
 
-  const CustomTooltip = ({ active, payload }) => {
+  const CustomTooltip = useCallback(({ active, payload }) => {
     if (active && payload?.length) {
       const d = payload[0];
       const percent = ((d.value / d.payload.total) * 100).toFixed(1);
       return (
-        <div className="bg-white p-2 border rounded shadow text-sm">
-          <strong>{d.name}</strong><br />
-          {d.value} participantes<br />
-          {percent}% del total
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg text-sm">
+          <div className="font-semibold text-gray-800 mb-1">{d.name}</div>
+          <div className="text-gray-600">
+            <span className="font-medium">{d.value}</span> participantes
+          </div>
+          <div className="text-gray-500 text-xs mt-1">{percent}% del total</div>
         </div>
       );
     }
     return null;
-  };
+  }, []);
 
-  // ========== FUNCIÓN DE DESCARGA MEJORADA ==========
-  const downloadChartAsPNG = (chartData, title, useBar = false) => {
+  const convertSvgToPng = useCallback((svgContent, title, width, height) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `${title.replace(/\s+/g, "_")}.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgContent)));
+  }, []);
+
+  const downloadChartAsPNG = useCallback((chartData, title, useBar = false) => {
     const total = chartData.reduce((acc, item) => acc + item.value, 0);
     const dataWithPercent = chartData.map(item => ({
       ...item,
@@ -111,135 +129,63 @@ const ChartsSection = () => {
     }));
 
     if (useBar) {
-      // Generar gráfico de barras como SVG
-      const width = 600;
-      const barHeight = 35;
-      const height = Math.max(400, dataWithPercent.length * barHeight + 100);
-      const marginLeft = 150;
-      const marginRight = 120;
-      const marginTop = 60;
+      const width = 700;
+      const barHeight = 40;
+      const height = Math.max(400, dataWithPercent.length * barHeight + 120);
+      const marginLeft = 200;
+      const marginRight = 150;
+      const marginTop = 80;
       const chartWidth = width - marginLeft - marginRight;
-
       const maxValue = Math.max(...dataWithPercent.map(d => d.value));
 
-      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
-      svgContent += `<rect width="${width}" height="${height}" fill="white"/>`;
-      svgContent += `<text x="${width / 2}" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2937" font-family="Arial, sans-serif">${title}</text>`;
-      svgContent += `<text x="${width - 20}" y="35" text-anchor="end" font-size="12" fill="#6b7280" font-family="Arial, sans-serif">${total} total</text>`;
-
-      dataWithPercent.forEach((item, index) => {
-        const y = marginTop + index * barHeight;
-        const barWidth = (item.value / maxValue) * chartWidth;
-        const color = COLORS[index % COLORS.length];
-
-        // Etiqueta izquierda
-        const labelText = item.name.length > 18 ? item.name.substring(0, 18) + "..." : item.name;
-        svgContent += `<text x="${marginLeft - 10}" y="${y + barHeight / 2 + 4}" text-anchor="end" font-size="11" fill="#374151" font-family="Arial">${labelText}</text>`;
-
-        // Barra
-        svgContent += `<rect x="${marginLeft}" y="${y}" width="${barWidth}" height="${barHeight - 5}" fill="${color}" rx="3"/>`;
-
-        // Valor y porcentaje
-        svgContent += `<text x="${marginLeft + barWidth + 8}" y="${y + barHeight / 2 + 4}" text-anchor="start" font-size="11" font-weight="bold" fill="#374151" font-family="Arial">${item.value} (${item.percent}%)</text>`;
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+      svg += `<rect width="${width}" height="${height}" fill="white"/>`;
+      svg += `<text x="${width/2}" y="40" text-anchor="middle" font-size="22" font-weight="bold" fill="#1f2937" font-family="Arial">${title}</text>`;
+      svg += `<text x="${width-30}" y="40" text-anchor="end" font-size="14" fill="#6b7280" font-family="Arial">Total: ${total}</text>`;
+      dataWithPercent.forEach((item, i) => {
+        const y = marginTop + i * barHeight;
+        const bw = (item.value / maxValue) * chartWidth;
+        const color = COLORS[i % COLORS.length];
+        svg += `<text x="${marginLeft-15}" y="${y+barHeight/2+5}" text-anchor="end" font-size="12" fill="#374151" font-family="Arial">${item.name}</text>`;
+        svg += `<rect x="${marginLeft}" y="${y+5}" width="${bw}" height="${barHeight-10}" fill="${color}" rx="4"/>`;
+        svg += `<text x="${marginLeft+bw+10}" y="${y+barHeight/2+5}" font-size="12" font-weight="bold" fill="#374151" font-family="Arial">${item.value} (${item.percent}%)</text>`;
       });
-
-      svgContent += `</svg>`;
-
-      convertSvgToPng(svgContent, title, width, height);
+      svg += `</svg>`;
+      convertSvgToPng(svg, title, width, height);
 
     } else {
-      // Generar gráfico de pastel como SVG
-      const width = 500;
-      const height = 400;
-      const centerX = width / 2;
-      const centerY = 180;
-      const radius = 100;
-
-      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
-      svgContent += `<rect width="${width}" height="${height}" fill="white"/>`;
-      svgContent += `<text x="${centerX}" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2937" font-family="Arial, sans-serif">${title}</text>`;
-      svgContent += `<text x="${width - 20}" y="35" text-anchor="end" font-size="12" fill="#6b7280" font-family="Arial, sans-serif">${total} total</text>`;
-
+      const width = 700;
+      const height = 500;
+      const cx = width / 2, cy = 220, r = 130;
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+      svg += `<rect width="${width}" height="${height}" fill="white"/>`;
+      svg += `<text x="${cx}" y="40" text-anchor="middle" font-size="22" font-weight="bold" fill="#1f2937" font-family="Arial">${title}</text>`;
       let angle = -90;
-      dataWithPercent.forEach((item, index) => {
-        const percentage = parseFloat(item.percent);
-        const sweepAngle = (percentage / 100) * 360;
-        const startAngle = angle;
-        const endAngle = startAngle + sweepAngle;
-
-        const startRad = (startAngle * Math.PI) / 180;
-        const endRad = (endAngle * Math.PI) / 180;
-
-        const x1 = centerX + radius * Math.cos(startRad);
-        const y1 = centerY + radius * Math.sin(startRad);
-        const x2 = centerX + radius * Math.cos(endRad);
-        const y2 = centerY + radius * Math.sin(endRad);
-
-        const largeArc = sweepAngle > 180 ? 1 : 0;
-        const color = COLORS[index % COLORS.length];
-
-        svgContent += `<path d="M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${color}"/>`;
-
-        // Etiqueta dentro del slice si es >= 5%
-        if (percentage >= 5) {
-          const midAngle = startAngle + sweepAngle / 2;
-          const midRad = (midAngle * Math.PI) / 180;
-          const labelRadius = radius * 0.65;
-          const labelX = centerX + labelRadius * Math.cos(midRad);
-          const labelY = centerY + labelRadius * Math.sin(midRad);
-          svgContent += `<text x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="bold" fill="white" font-family="Arial">${item.percent}%</text>`;
-        }
-
-        angle = endAngle;
+      dataWithPercent.forEach((item, i) => {
+        const sweep = (parseFloat(item.percent) / 100) * 360;
+        const sr = (angle * Math.PI) / 180;
+        const er = ((angle + sweep) * Math.PI) / 180;
+        const x1 = cx + r * Math.cos(sr), y1 = cy + r * Math.sin(sr);
+        const x2 = cx + r * Math.cos(er), y2 = cy + r * Math.sin(er);
+        const la = sweep > 180 ? 1 : 0;
+        svg += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${la} 1 ${x2} ${y2} Z" fill="${COLORS[i % COLORS.length]}" stroke="white" stroke-width="2"/>`;
+        angle += sweep;
       });
-
-      // Leyenda
-      const legendStartY = 310;
-      const legendStartX = 30;
-      const itemsPerRow = 3;
-      const itemWidth = 150;
-      const rowHeight = 22;
-
-      dataWithPercent.forEach((item, index) => {
-        const col = index % itemsPerRow;
-        const row = Math.floor(index / itemsPerRow);
-        const x = legendStartX + col * itemWidth;
-        const y = legendStartY + row * rowHeight;
-        const color = COLORS[index % COLORS.length];
-
-        svgContent += `<rect x="${x}" y="${y}" width="14" height="14" fill="${color}" rx="3"/>`;
-        const labelText = item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name;
-        svgContent += `<text x="${x + 20}" y="${y + 11}" font-size="10" fill="#374151" font-family="Arial">${labelText} (${item.value})</text>`;
+      let ly = cy + r + 40;
+      dataWithPercent.forEach((item, i) => {
+        svg += `<rect x="50" y="${ly-10}" width="16" height="16" fill="${COLORS[i % COLORS.length]}" rx="3"/>`;
+        svg += `<text x="74" y="${ly+3}" font-size="12" fill="#374151" font-family="Arial">${item.name}: ${item.value} (${item.percent}%)</text>`;
+        ly += 24;
       });
-
-      svgContent += `</svg>`;
-
-      convertSvgToPng(svgContent, title, width, height);
+      svg += `</svg>`;
+      convertSvgToPng(svg, title, width, height);
     }
-  };
+  }, [convertSvgToPng]);
 
-  const convertSvgToPng = (svgContent, title, width, height) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = width * 2;
-    canvas.height = height * 2;
-    const ctx = canvas.getContext("2d");
-    ctx.scale(2, 2);
-
-    const img = new Image();
-    img.onload = () => {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
-      const link = document.createElement("a");
-      link.download = `${title.replace(/\s+/g, "_")}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgContent)));
-  };
-
-  const renderChart = (field, label, useBar = false) => {
+  const renderChart = useCallback((field, label, useBar = false) => {
     const { data: chartData, invalidCount } = groupByField(field);
+    if (chartData.length === 0 && invalidCount === 0) return null;
+
     const total = chartData.reduce((acc, item) => acc + item.value, 0);
     const dataWithTotal = chartData.map(item => ({
       ...item,
@@ -248,17 +194,23 @@ const ChartsSection = () => {
     }));
 
     return (
-      <div key={field} className="bg-white p-4 rounded-lg shadow chart-card relative">
+      // ✅ data-pdf-block le dice al generador de PDF que este div no se debe partir
+      <div
+        key={field}
+        data-pdf-block
+        className="bg-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100"
+      >
         <div className="flex justify-between items-center mb-3">
-          <h4 className="font-semibold text-gray-800">{label}</h4>
+          <h4 className="font-semibold text-gray-800 text-lg">{label}</h4>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-medium">
               {total} total
             </span>
             <button
               onClick={() => downloadChartAsPNG(chartData, label, useBar)}
               className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="Descargar gráfico"
+              aria-label={`Descargar gráfico de ${label}`}
             >
               <Download className="w-4 h-4" />
             </button>
@@ -310,28 +262,32 @@ const ChartsSection = () => {
           )}
         </div>
 
-        {/* Leyenda para gráficos de pastel */}
         {!useBar && chartData.length > 0 && (
           <div className="flex flex-wrap justify-center gap-3 mt-4 px-2">
             {dataWithTotal.map((item, index) => (
-              <div key={index} className="flex items-center gap-2 px-2 py-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-xs font-medium">{item.name} ({item.percent}%)</span>
+              <div key={index} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded transition-colors">
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="text-xs font-medium text-gray-700">
+                  {item.name} ({item.percent}%)
+                </span>
               </div>
             ))}
           </div>
         )}
 
         {invalidCount > 0 && (
-          <div className="text-xs text-red-600 mt-2">
+          <div className="text-xs text-red-600 mt-3 bg-red-50 px-3 py-2 rounded">
             {invalidCount} sin dato ({((invalidCount / (invalidCount + total)) * 100).toFixed(1)}%)
           </div>
         )}
       </div>
     );
-  };
+  }, [groupByField, downloadChartAsPNG, CustomTooltip]);
 
-  const campos = React.useMemo(() => {
+  const campos = useMemo(() => {
     let base = [...camposGenerales];
     if (tab === 'procesos') {
       base = base.map(c => c.field === 'sexo' ? { ...c, label: 'Me identifico como' } : c);
@@ -344,11 +300,27 @@ const ChartsSection = () => {
 
   return (
     <div className="mt-8">
-      <div className="mb-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">📊 Análisis por Categorías</h3>
-        <div className="flex items-center gap-4 text-sm text-gray-600">
-          <span>Total de registros: <strong>{data.length}</strong></span>
-          <span>Modo: <strong>{showUnique ? 'Únicos' : 'Todos'}</strong></span>
+      {/* ✅ El encabezado de sección también es un bloque que no se parte */}
+      <div data-pdf-block className="mb-6 bg-white rounded-xl shadow-md p-6 border border-gray-100">
+        <h3 className="text-2xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <span className="text-2xl">📊</span>
+          Análisis por Categorías
+        </h3>
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">Total de registros:</span>
+            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold">
+              {data.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">Modo:</span>
+            <span className={`px-3 py-1 rounded-full font-bold ${
+              showUnique ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+            }`}>
+              {showUnique ? 'Únicos' : 'Todos'}
+            </span>
+          </div>
         </div>
       </div>
 
