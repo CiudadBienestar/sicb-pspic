@@ -1,76 +1,131 @@
 import React from "react";
-import { useDashboard } from "../vigencias/2025/DashboardParticipantes";
-import columnsMap from "../../config/columnsMap";
 import { Users, Percent, BookOpenCheck, Goal, GraduationCap } from "../../icons/icons";
 
-const SummaryCards = () => {
-  const {
-    tab,
-    acciones,
-    procesos,
-    filteredAcciones,
-    filteredProcesos,
-    filteredData,
-    showUnique,
-  } = useDashboard();
+/**
+ * SummaryCards — Genérico para cualquier vigencia.
+ *
+ * Props:
+ *   tab            "todo" | "acciones" | "procesos"
+ *   acciones       filas crudas de acciones (sin filtrar)
+ *   procesos       filas crudas de procesos (sin filtrar)
+ *   filteredData   filas activas según tab (ya calculado por el provider)
+ *   showUnique     boolean
+ *   columns        { acciones: { no, actividad, … }, procesos: { no, actividad, … } }
+ */
 
-  const getFilteredData = () => {
-    switch (tab) {
-      case "acciones": return filteredAcciones;
-      case "procesos": return filteredProcesos;
-      default:         return filteredData;
-    }
+// Config de color por tarjeta — misma paleta del Dashboard
+const CARD_CONFIG = {
+  participantes: {
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-700",
+    valueColor: "text-blue-900",
+    labelColor: "text-blue-600",
+  },
+  acciones: {
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    iconBg: "bg-orange-100",
+    iconColor: "text-orange-700",
+    valueColor: "text-orange-900",
+    labelColor: "text-orange-600",
+  },
+  procesos: {
+    bg: "bg-purple-50",
+    border: "border-purple-200",
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-700",
+    valueColor: "text-purple-900",
+    labelColor: "text-purple-600",
+  },
+  porcentaje: {
+    bg: "bg-green-50",
+    border: "border-green-200",
+    iconBg: "bg-green-100",
+    iconColor: "text-green-700",
+    valueColor: "text-green-900",
+    labelColor: "text-green-600",
+  },
+  actividades: {
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-700",
+    valueColor: "text-emerald-900",
+    labelColor: "text-emerald-600",
+  },
+};
+
+// Tarjeta individual
+const StatCard = ({ icon: Icon, label, value, configKey }) => {
+  const c = CARD_CONFIG[configKey];
+  return (
+    <div className={`rounded-xl border p-4 flex items-start gap-3 ${c.bg} ${c.border}`}>
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${c.iconBg}`}>
+        <Icon className={`w-4 h-4 ${c.iconColor}`} />
+      </div>
+      <div className="min-w-0">
+        <p className={`text-xs font-medium uppercase tracking-wide mb-1 ${c.labelColor}`}>
+          {label}
+        </p>
+        <p className={`text-2xl font-bold leading-none ${c.valueColor}`}>
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const SummaryCards = ({
+  tab,
+  acciones,
+  procesos,
+  filteredData,
+  showUnique,
+  columns,
+}) => {
+  const colA = columns.acciones;
+  const colP = columns.procesos;
+
+  const getIdForRow = (d) => {
+    if (tab === "acciones") return d[colA.no];
+    if (tab === "procesos") return d[colP.no];
+    return d[colA.no] || d[colP.no];
   };
 
-  const data = getFilteredData();
-
-  const getIdKey = (tipo) => columnsMap[tipo]?.no || "No de Identificación";
-
-  // Fix: en modo "todo", usar ambas claves de ID en lugar de "Nombre de la actividad" (campo inexistente)
-  const getIdForRow = (d, tabActual) => {
-    if (tabActual === "acciones") return d[getIdKey("acciones")];
-    if (tabActual === "procesos") return d[getIdKey("procesos")];
-    return d[getIdKey("acciones")] || d[getIdKey("procesos")];
-  };
+  const data = filteredData;
 
   const participantesTotal = showUnique
-    ? new Set(
-        data.map((d) => getIdForRow(d, tab)).filter(Boolean)
-      ).size
+    ? new Set(data.map(getIdForRow).filter(Boolean)).size
     : data.length;
 
-  // Fix: participantesGlobal debe basarse en datos SIN filtrar (acciones y procesos crudos)
   const participantesGlobal = showUnique
     ? new Set(
         [...acciones, ...procesos]
-          .map((d) => d[getIdKey("acciones")] || d[getIdKey("procesos")])
+          .map((d) => d[colA.no] || d[colP.no])
           .filter(Boolean)
       ).size
     : acciones.length + procesos.length;
 
   const calculateUniqueActivities = () => {
-    const actividades = new Set();
     const headerValues = [
       "Actividad/Proceso", "Nombre de la actividad",
       "actividad", "proceso", "Actividad", "Proceso",
     ];
+    const actividades = new Set();
     data.forEach((item) => {
-      let actividadValue;
-      if (tab === "acciones") {
-        actividadValue = item[columnsMap.acciones.actividad];
-      } else if (tab === "procesos") {
-        actividadValue = item[columnsMap.procesos.actividad];
-      } else {
-        actividadValue =
-          item[columnsMap.acciones.actividad] ||
-          item[columnsMap.procesos.actividad];
-      }
-      if (typeof actividadValue === "string" && actividadValue.trim() !== "") {
-        const cleanValue = actividadValue.trim();
+      let val;
+      if (tab === "acciones")      val = item[colA.actividad];
+      else if (tab === "procesos") val = item[colP.actividad];
+      else                         val = item[colA.actividad] || item[colP.actividad];
+
+      if (typeof val === "string" && val.trim() !== "") {
+        const clean = val.trim();
         const isHeader = headerValues.some(
-          (h) => cleanValue.toLowerCase() === h.toLowerCase()
+          (h) => clean.toLowerCase() === h.toLowerCase()
         );
-        if (!isHeader) actividades.add(cleanValue);
+        if (!isHeader) actividades.add(clean);
       }
     });
     return actividades.size;
@@ -78,54 +133,51 @@ const SummaryCards = () => {
 
   const totalActividades = data.length > 0 ? calculateUniqueActivities() : 0;
 
-  const porcentaje =
-    tab === "todo"
-      ? 100
-      : participantesGlobal
-        ? ((participantesTotal / participantesGlobal) * 100).toFixed(1)
-        : 0;
+  const porcentaje = participantesGlobal
+    ? ((participantesTotal / participantesGlobal) * 100).toFixed(1)
+    : 0;
 
   return (
-    // ✅ data-pdf-block: el generador PDF tratará estas tarjetas como un bloque único
-    <div data-pdf-block className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-      <div className="bg-white shadow rounded-lg p-4">
-        <h4 className="text-sm text-gray-500 mb-1 flex items-center gap-2">
-          <Users className="w-4 h-4 text-blue-500" />
-          Total Participantes
-        </h4>
-        <p className="text-2xl font-semibold text-gray-900">{participantesGlobal}</p>
-      </div>
+    <div data-pdf-block className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
 
+      {/* Total participantes — siempre visible */}
+      <StatCard
+        icon={Users}
+        label="Total participantes"
+        value={participantesTotal.toLocaleString("es-CO")}
+        configKey="participantes"
+      />
+
+      {/* Tarjeta específica por tab */}
       {tab !== "todo" && (
-        <div className="bg-white shadow rounded-lg p-4">
-          <h4 className="text-sm text-gray-500 mb-1 flex items-center gap-2">
-            {tab === "acciones" && <Goal className="w-4 h-4 text-blue-500" />}
-            {tab === "procesos" && <GraduationCap className="w-4 h-4 text-green-500" />}
-            {tab === "acciones"
-              ? "Participantes en Acciones Masivas/Informativas"
-              : "Participantes en Procesos Formativos"}
-          </h4>
-          <p className="text-2xl font-semibold text-gray-900">{participantesTotal}</p>
-        </div>
+        <StatCard
+          icon={tab === "acciones" ? Goal : GraduationCap}
+          label={
+            tab === "acciones"
+              ? "Acciones masivas / informativas"
+              : "Procesos formativos"
+          }
+          value={participantesTotal.toLocaleString("es-CO")}
+          configKey={tab === "acciones" ? "acciones" : "procesos"}
+        />
       )}
 
-      <div className="bg-white shadow rounded-lg p-4">
-        <h4 className="text-sm text-gray-500 mb-1 flex items-center gap-2">
-          <Percent className="w-4 h-4 text-blue-500" />
-          {tab === "todo" ? "Participantes" : "% de Participación"}
-        </h4>
-        <p className="text-2xl font-semibold text-gray-900">
-          {tab === "todo" ? "100%" : `${porcentaje}%`}
-        </p>
-      </div>
+      {/* % de participación */}
+      <StatCard
+        icon={Percent}
+        label="% de participación"
+        value={`${porcentaje}%`}
+        configKey="porcentaje"
+      />
 
-      <div className="bg-white shadow rounded-lg p-4">
-        <h4 className="text-sm text-gray-500 mb-1 flex items-center gap-2">
-          <BookOpenCheck className="w-4 h-4 text-blue-500" />
-          Total de Actividades
-        </h4>
-        <p className="text-2xl font-semibold text-gray-900">{totalActividades}</p>
-      </div>
+      {/* Total actividades */}
+      <StatCard
+        icon={BookOpenCheck}
+        label="Total de actividades"
+        value={totalActividades.toLocaleString("es-CO")}
+        configKey="actividades"
+      />
+
     </div>
   );
 };

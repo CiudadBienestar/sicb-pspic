@@ -7,17 +7,6 @@ const SHEETS = {
   actividades: { gid: "1913714559" },
 };
 
-const columnasDeseadas = [
-  "Equipo",
-  "Descripción Producto",
-  "Actividad",
-  "Evidencia",
-  "Cumplimiento Tarea",
-  "Estado",
-  "Entornos",
-  "Tecnologías",
-];
-
 const renderProgressBar = (valor) => {
   if (!valor) return <span className="text-gray-400 italic">Sin datos</span>;
 

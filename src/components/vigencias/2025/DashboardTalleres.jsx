@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, {
   useState,
   useEffect,
@@ -206,7 +207,7 @@ export const FiltersTalleres = () => {
         <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-200">
           <div className="flex flex-wrap gap-2">
             {Object.entries(filters)
-              .filter(([_, value]) => value && value !== "Todos")
+              .filter(([, value]) => value && value !== "Todos")
               .map(([key, value]) => (
                 <span key={key} className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800 font-medium">
                   {value}

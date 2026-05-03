@@ -1,128 +1,178 @@
-import React, { useMemo, useCallback } from 'react';
-import { useDashboard } from "../vigencias/2025/DashboardParticipantes";
-import columnsMap from "../../config/columnsMap";
+import React, { useMemo, useCallback } from "react";
 
-const FILTER_CONFIG = {
-  equipo: "Equipo/Problemática",
-  entorno: "Entornos Abordados", 
-  actividad: "Actividad/Proceso",
-  zona: "Zona"
+/**
+ * Filters — Genérico para cualquier vigencia.
+ *
+ * Props:
+ *   tab            "todo" | "acciones" | "procesos"
+ *   acciones       filas crudas de acciones
+ *   procesos       filas crudas de procesos
+ *   filters        { [campo]: valor }
+ *   setFilters     setter de estado
+ *   columns        { acciones: { equipo, entorno, actividad, zona, … },
+ *                    procesos:  { equipo, entorno, actividad, zona, … } }
+ *   filterFields   Array de { field: string, label: string }
+ *                  Campos que se mostrarán como filtros.
+ *                  Por defecto: equipo, entorno, actividad, zona.
+ */
+
+const DEFAULT_FILTER_FIELDS = [
+  { field: "equipo",    label: "Equipo/Problemática"  },
+  { field: "entorno",   label: "Entornos Abordados"   },
+  { field: "actividad", label: "Actividad/Proceso"    },
+  { field: "zona",      label: "Zona"                 },
+];
+
+const normalizeText = (value) =>
+  value
+    ?.toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase() ?? "";
+
+const FIELD_ALIASES = {
+  actividad: ["actividad/proceso", "actividad/tematica", "actividad", "proceso", "nombre del proceso"],
+  equipo: ["equipo/problematica", "eje/equipo", "equipo"],
+  entorno: ["entornos abordados", "entorno"],
+  zona: ["zona"],
 };
 
-const FilterSelect = ({ label, field }) => {
-  const { filters, setFilters, tab, acciones, procesos } = useDashboard();
+const findColumnKey = (row, expectedColumn, field) => {
+  if (!row || !expectedColumn) return expectedColumn;
+  if (Object.prototype.hasOwnProperty.call(row, expectedColumn)) {
+    return expectedColumn;
+  }
 
-  // Obtener nombre de columna según el tipo de datos
-  const getColumnName = useCallback((field, dataType) => {
-    return columnsMap[dataType]?.[field] || field;
-  }, []);
+  const expected = normalizeText(expectedColumn);
+  const exactOrPrefixMatch = Object.keys(row).find((key) => {
+    const current = normalizeText(key);
+    return current === expected || current.startsWith(expected);
+  });
 
-  // Obtener datos según el tab actual
+  if (exactOrPrefixMatch) return exactOrPrefixMatch;
+
+  const aliases = FIELD_ALIASES[field] ?? [];
+  return Object.keys(row).find((key) => {
+    const current = normalizeText(key);
+    return aliases.some((alias) => current.includes(alias));
+  });
+};
+
+// ─── FilterSelect ────────────────────────────────────────────────────────────
+
+const FilterSelect = ({ label, field, tab, acciones, procesos, columns, filters, setFilters }) => {
+  const colA = columns.acciones;
+  const colP = columns.procesos;
+
+  const getColumnName = useCallback(
+    (f, type) => (type === "acciones" ? colA[f] : colP[f]) || f,
+    [colA, colP]
+  );
+
   const currentData = useMemo(() => {
-    switch (tab) {
-      case 'acciones': return acciones;
-      case 'procesos': return procesos;
-      default: return [...acciones, ...procesos];
-    }
+    if (tab === "acciones") return acciones;
+    if (tab === "procesos") return procesos;
+    return [...acciones, ...procesos];
   }, [tab, acciones, procesos]);
 
-  // Obtener valor de un item según el tab
-  const getItemValue = useCallback((item, field) => {
-    if (tab === 'acciones') {
-      return item[getColumnName(field, 'acciones')];
-    } else if (tab === 'procesos') {
-      return item[getColumnName(field, 'procesos')];
-    } else {
-      return item[getColumnName(field, 'acciones')] || 
-             item[getColumnName(field, 'procesos')];
-    }
-  }, [tab, getColumnName]);
+  const getItemValue = useCallback(
+    (item, f) => {
+      const getValue = (type) => {
+        const columnName = getColumnName(f, type);
+        const resolvedColumn = findColumnKey(item, columnName, f);
+        return item[resolvedColumn];
+      };
 
-  // Aplicar filtros excepto el actual
+      if (tab === "acciones") return getValue("acciones");
+      if (tab === "procesos") return getValue("procesos");
+      return getValue("acciones") || getValue("procesos");
+    },
+    [tab, getColumnName]
+  );
+
+  // Datos con todos los filtros aplicados excepto el actual (cascada)
   const filteredData = useMemo(() => {
-    const otherFilters = Object.entries(filters).filter(([key]) => key !== field);
-    
-    if (otherFilters.length === 0) return currentData;
-
-    return currentData.filter(item => {
-      return otherFilters.every(([filterKey, filterValue]) => {
-        if (!filterValue) return true;
-        const itemValue = getItemValue(item, filterKey);
-        return itemValue?.toString().trim() === filterValue;
-      });
-    });
+    const others = Object.entries(filters).filter(([k]) => k !== field);
+    if (others.length === 0) return currentData;
+    return currentData.filter((item) =>
+      others.every(([k, v]) => {
+        if (!v) return true;
+        return normalizeText(getItemValue(item, k)) === normalizeText(v);
+      })
+    );
   }, [currentData, filters, field, getItemValue]);
 
-  // Extraer valores únicos
   const values = useMemo(() => {
-    const uniqueValues = new Set();
-    
-    filteredData.forEach(item => {
-      const value = getItemValue(item, field);
-      const trimmedValue = value?.toString().trim();
-      
-      if (trimmedValue) {
-        uniqueValues.add(trimmedValue);
-      }
-    });
+    const collectValues = (rows) => {
+      const set = new Set();
+      rows.forEach((item) => {
+        const v = getItemValue(item, field)?.toString().trim();
+        if (v) set.add(v);
+      });
+      return set;
+    };
 
-    return Array.from(uniqueValues).sort((a, b) => 
-      a.localeCompare(b, 'es', { sensitivity: 'base' })
-    );
-  }, [filteredData, field, getItemValue]);
+    let set = collectValues(filteredData);
 
-  // Handler de cambio
-  const handleChange = useCallback((e) => {
-    const value = e.target.value;
-    setFilters(prev => {
-      if (!value || value === 'Todos') {
-        const { [field]: _, ...rest } = prev;
-        return rest;
-      }
-      return { ...prev, [field]: value };
-    });
-  }, [field, setFilters]);
+    // Si una combinación previa deja la cascada sin opciones, evita deshabilitar
+    // el filtro: muestra las opciones disponibles de la vista actual.
+    if (set.size === 0 && filteredData !== currentData) {
+      set = collectValues(currentData);
+    }
 
-  const isDisabled = values.length === 0;
-  const currentValue = filters[field] || '';
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  }, [filteredData, currentData, field, getItemValue]);
+
+  const valueCount = values.length;
+
+  const handleChange = useCallback(
+    (e) => {
+      const value = e.target.value;
+      setFilters((prev) => {
+        if (!value || value === "Todos") {
+          const { [field]: _, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [field]: value };
+      });
+    },
+    [field, setFilters]
+  );
+
+  const isDisabled = valueCount === 0;
+  const currentValue = filters[field] || "";
 
   return (
     <div className="flex flex-col">
-      <label 
-        htmlFor={`filter-${field}`}
-        className="text-sm text-gray-700 font-medium mb-2"
-      >
+      <label htmlFor={`filter-${field}`} className="text-sm text-gray-700 font-medium mb-2">
         {label}
       </label>
       <select
         id={`filter-${field}`}
         className={`border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-          isDisabled 
-            ? 'bg-gray-100 cursor-not-allowed text-gray-500' 
-            : 'bg-white hover:border-gray-400'
+          isDisabled
+            ? "bg-gray-100 cursor-not-allowed text-gray-500"
+            : "bg-white hover:border-gray-400"
         }`}
         value={currentValue}
         onChange={handleChange}
         disabled={isDisabled}
         aria-label={`Filtrar por ${label}`}
       >
-        <option value="">
-          {isDisabled ? 'No hay opciones' : 'Todos'}
-        </option>
-        {values.map((value) => (
-          <option key={value} value={value}>
-            {value}
-          </option>
+        <option value="">{isDisabled ? "No hay opciones" : "Todos"}</option>
+        {values.map((v) => (
+          <option key={v} value={v}>{v}</option>
         ))}
       </select>
       <div className="h-5 mt-1">
         {isDisabled ? (
-          <span className="text-xs text-gray-500">
-            Sin opciones disponibles
-          </span>
+          <span className="text-xs text-gray-500">Sin opciones disponibles</span>
         ) : (
           <span className="text-xs text-gray-500">
-            {values.length} opción{values.length !== 1 ? 'es' : ''} disponible{values.length !== 1 ? 's' : ''}
+            {values.length} opción{values.length !== 1 ? "es" : ""} disponible
+            {values.length !== 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -130,29 +180,36 @@ const FilterSelect = ({ label, field }) => {
   );
 };
 
-const Filters = () => {
-  const { filters, setFilters } = useDashboard();
+// ─── Filters ─────────────────────────────────────────────────────────────────
 
-  // Limpiar todos los filtros
-  const clearFilters = useCallback(() => {
-    setFilters({});
-  }, [setFilters]);
+const Filters = ({
+  tab,
+  acciones,
+  procesos,
+  columns,
+  filters,
+  setFilters,
+  filterFields = DEFAULT_FILTER_FIELDS,
+}) => {
+  const clearFilters = useCallback(() => setFilters({}), [setFilters]);
 
-  // Remover filtro individual
-  const removeFilter = useCallback((filterKey) => {
-    setFilters(prev => {
-      const { [filterKey]: _, ...rest } = prev;
-      return rest;
-    });
-  }, [setFilters]);
+  const removeFilter = useCallback(
+    (key) => setFilters((prev) => { const { [key]: _, ...rest } = prev; return rest; }),
+    [setFilters]
+  );
 
-  // Estado de filtros activos
-  const activeFilters = useMemo(() => 
-    Object.entries(filters).filter(([_, value]) => value),
+  const activeFilters = useMemo(
+    () => Object.entries(filters).filter(([, v]) => v),
     [filters]
   );
 
   const hasActiveFilters = activeFilters.length > 0;
+
+  // Mapa field→label para los badges de filtros activos
+  const fieldLabelMap = useMemo(
+    () => Object.fromEntries(filterFields.map(({ field, label }) => [field, label])),
+    [filterFields]
+  );
 
   return (
     <div className="mb-6 bg-white rounded-xl shadow-lg p-6">
@@ -173,22 +230,25 @@ const Filters = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        {Object.entries(FILTER_CONFIG).map(([field, label]) => (
-          <FilterSelect 
-            key={field} 
-            label={label} 
-            field={field} 
+        {filterFields.map(({ field, label }) => (
+          <FilterSelect
+            key={field}
+            label={label}
+            field={field}
+            tab={tab}
+            acciones={acciones}
+            procesos={procesos}
+            columns={columns}
+            filters={filters}
+            setFilters={setFilters}
           />
         ))}
       </div>
 
-      {/* Filtros activos */}
       {hasActiveFilters && (
         <div className="pt-4 border-t border-gray-200">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-semibold text-gray-700">
-              Filtros activos:
-            </span>
+            <span className="text-sm font-semibold text-gray-700">Filtros activos:</span>
             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium">
               {activeFilters.length}
             </span>
@@ -199,12 +259,12 @@ const Filters = () => {
                 key={key}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100 transition-colors"
               >
-                <span className="font-semibold">{FILTER_CONFIG[key] || key}:</span>
+                <span className="font-semibold">{fieldLabelMap[key] || key}:</span>
                 <span>{value}</span>
                 <button
                   onClick={() => removeFilter(key)}
                   className="ml-1 text-blue-600 hover:text-blue-900 hover:bg-blue-200 rounded-full w-4 h-4 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  aria-label={`Remover filtro ${FILTER_CONFIG[key] || key}`}
+                  aria-label={`Remover filtro ${fieldLabelMap[key] || key}`}
                   title="Remover filtro"
                 >
                   ✕

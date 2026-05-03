@@ -1,4 +1,10 @@
-import React, { useState, useMemo, lazy, Suspense, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  Suspense,
+  useCallback,
+  useEffect,
+} from "react";
 import {
   ChevronDown,
   Home,
@@ -10,50 +16,35 @@ import {
   Calendar,
   HeartHandshake,
   GraduationCap,
-  Info,
   Loader2,
+  ArrowRight,
+  Activity,
 } from "lucide-react";
 
-// Lazy loading de componentes pesados
-const DashboardParticipantes = lazy(() => import("./vigencias/2025/DashboardParticipantes"));
-const DashboardIndicadores = lazy(() => import("./vigencias/2025/DashboardIndicadores"));
-const DashboardCumplimiento = lazy(() => import("./vigencias/2025/DashboardCumplimiento"));
+import ParticleLogo from "./ParticleLogo";
+import ExportReportButton from "./common/ExportButton";
 
-// Importaciones normales para componentes ligeros
-import SummaryCards from "../components/common/SummaryCards";
-import Filters from "../components/common/Filters";
-import ChartsSection from "../components/common/ChartsSection";
-import ExportReportButton from "../components/common/ExportButton";
-import ParticleLogo from "../components/ParticleLogo";
+import { AVAILABLE_YEARS, VIGENCIAS_CONFIG } from "../config/vigencias";
+import { getVigenciaComponent } from "../config/vigenciaComponents";
 
-import DashboardIncorporacionCB, {
-  SummaryCardsCB,
-  FiltersCB,
-  TablaActividades,
-  ChartsCB,
-  DetalleActividadModal
-} from "./vigencias/2025/DashboardIncorporacionCB";
-
-import DashboardTalleres, {
+import {
   SummaryCardsTalleres,
   FiltersTalleres,
   ChartsTalleres,
   TablaTalleres,
-  DetalleTallerModal
+  DetalleTallerModal,
 } from "./vigencias/2025/DashboardTalleres";
 
-// Constantes
-const SECTION_NAMES = {
-  cumplimiento: "Cumplimiento PSPIC",
-  indicadores: "Indicadores",
-  participantes: "Participantes",
-  incorporacioncb: "Incorporación Estrategia CB",
-  talleres: "Talleres"
-};
+import {
+  SummaryCardsCB,
+  FiltersCB,
+  ChartsCB,
+  TablaActividades,
+  DetalleActividadModal,
+} from "./vigencias/2025/DashboardIncorporacionCB";
 
-const AVAILABLE_YEARS = ["2025", "2026"];
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-// Helper para localStorage con manejo de errores
 const localStorageHelper = {
   get: (key, defaultValue) => {
     try {
@@ -72,40 +63,112 @@ const localStorageHelper = {
     } catch (error) {
       console.error(`Error saving ${key}:`, error);
     }
-  }
+  },
 };
+
+// ── Constantes ────────────────────────────────────────────────────────────────
+
+const SECTION_META = {
+  cumplimiento: {
+    label: "Cumplimiento PSPIC",
+    icon: Target,
+    // colores semánticos por sección
+    accent: "text-emerald-700",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    iconBg: "bg-emerald-100",
+    dot: "bg-emerald-500",
+  },
+  indicadores: {
+    label: "Indicadores",
+    icon: BarChart3,
+    accent: "text-blue-700",
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    iconBg: "bg-blue-100",
+    dot: "bg-blue-500",
+  },
+  incorporacioncb: {
+    label: "Incorporación CB",
+    icon: HeartHandshake,
+    accent: "text-orange-700",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    iconBg: "bg-orange-100",
+    dot: "bg-orange-500",
+  },
+  talleres: {
+    label: "Talleres",
+    icon: GraduationCap,
+    accent: "text-purple-700",
+    bg: "bg-purple-50",
+    border: "border-purple-200",
+    iconBg: "bg-purple-100",
+    dot: "bg-purple-500",
+  },
+  participantes: {
+    label: "Participantes",
+    icon: Users,
+    accent: "text-green-700",
+    bg: "bg-green-50",
+    border: "border-green-200",
+    iconBg: "bg-green-100",
+    dot: "bg-green-500",
+  },
+};
+
+const SECTION_NAMES = Object.fromEntries(
+  Object.entries(SECTION_META).map(([k, v]) => [k, v.label])
+);
+
+const STATUS_CONFIG = {
+  active: {
+    label: "Activa",
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  },
+  upcoming: {
+    label: "Próximamente",
+    dot: "bg-blue-400",
+    badge: "bg-blue-50 text-blue-700 border border-blue-200",
+  },
+  archived: {
+    label: "Archivada",
+    dot: "bg-gray-400",
+    badge: "bg-gray-100 text-gray-500 border border-gray-200",
+  },
+};
+
+// ── Dashboard principal ───────────────────────────────────────────────────────
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState(() =>
     localStorageHelper.get("activeSection", "home")
   );
-
   const [expandedYear, setExpandedYear] = useState(() =>
-    localStorageHelper.get("expandedYear", "2025")
+    localStorageHelper.get("expandedYear", AVAILABLE_YEARS[0])
   );
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
 
-  // Definición del menú
-  const menuItems = useMemo(() => ({
-    "2025": [
-      { id: "cumplimiento-2025", label: "Cumplimiento PSPIC", icon: Target, color: "text-emerald-600" },
-      { id: "indicadores-2025", label: "Indicadores", icon: BarChart3, color: "text-blue-600" },
-      { id: "incorporacioncb-2025", label: "Incorporación CB", icon: HeartHandshake, color: "text-orange-600" },
-      { id: "talleres-2025", label: "Talleres", icon: GraduationCap, color: "text-purple-600" },
-      { id: "participantes-2025", label: "Participantes", icon: Users, color: "text-green-600" },
-    ],
-    "2026": [
-      { id: "cumplimiento-2026", label: "Cumplimiento PSPIC", icon: Target, color: "text-emerald-600" },
-      { id: "indicadores-2026", label: "Indicadores", icon: BarChart3, color: "text-blue-600" },
-      { id: "incorporacioncb-2026", label: "Incorporación CB", icon: HeartHandshake, color: "text-orange-600" },
-      { id: "talleres-2026", label: "Talleres", icon: GraduationCap, color: "text-purple-600" },
-      { id: "participantes-2026", label: "Participantes", icon: Users, color: "text-green-600" },
-    ]
-  }), []);
+  const menuItems = useMemo(() => {
+    return Object.fromEntries(
+      AVAILABLE_YEARS.map((year) => [
+        year,
+        Object.entries(SECTION_META).map(([sectionKey, meta]) => ({
+          id: `${sectionKey}-${year}`,
+          label: meta.label,
+          icon: meta.icon,
+          accent: meta.accent,
+          bg: meta.bg,
+          border: meta.border,
+          iconBg: meta.iconBg,
+          dot: meta.dot,
+        })),
+      ])
+    );
+  }, []);
 
-  // Efectos para sincronizar con localStorage
   useEffect(() => {
     localStorageHelper.set("activeSection", activeSection);
   }, [activeSection]);
@@ -114,9 +177,8 @@ const Dashboard = () => {
     localStorageHelper.set("expandedYear", expandedYear);
   }, [expandedYear]);
 
-  // Handlers optimizados
   const toggleYear = useCallback((year) => {
-    setExpandedYear(prev => prev === year ? null : year);
+    setExpandedYear((prev) => (prev === year ? null : year));
   }, []);
 
   const handleSectionClick = useCallback((sectionId) => {
@@ -126,90 +188,111 @@ const Dashboard = () => {
   }, []);
 
   const toggleMobileMenu = useCallback(() => {
-    setIsMobileMenuOpen(prev => !prev);
+    setIsMobileMenuOpen((prev) => !prev);
   }, []);
 
   const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false);
   }, []);
 
-  // Breadcrumb memoizado
   const breadcrumb = useMemo(() => {
-    if (activeSection === "home") return "Inicio";
-
+    if (activeSection === "home") return null;
     const match = activeSection.match(/^(.+)-(\d{4})$/);
-    if (!match) return "Inicio";
-
+    if (!match) return null;
     const [, section, year] = match;
-    return `${year} / ${SECTION_NAMES[section] || section}`;
+    return { year, label: SECTION_NAMES[section] || section };
   }, [activeSection]);
 
-  // Componentes de página memoizados
   const renderContent = () => {
-    const components = {
-      "home": <HomePage participantesGlobal={participantesGlobal} />,
-      "participantes-2025": <ParticipantesPage year="2025" setParticipantesGlobal={setParticipantesGlobal} />,
-      "cumplimiento-2025": <CumplimientoPage year="2025" />,
-      "indicadores-2025": <IndicadoresPage year="2025" />,
-      "incorporacioncb-2025": <IncorporacionCBPage year="2025" />,
-      "talleres-2025": <TalleresPage year="2025" />,
-      "participantes-2026": <ParticipantesPage year="2026" />,
-      "cumplimiento-2026": <CumplimientoPage year="2026" />,
-      "indicadores-2026": <IndicadoresPage year="2026" />,
-      "incorporacioncb-2026": <IncorporacionCBPage year="2026" />,
-      "talleres-2026": <TalleresPage year="2026" />,
-    };
+    if (activeSection === "home") {
+      return (
+        <HomePage
+          participantesGlobal={participantesGlobal}
+          menuItems={menuItems}
+          handleSectionClick={handleSectionClick}
+        />
+      );
+    }
+
+    const match = activeSection.match(/^(.+)-(\d{4})$/);
+    if (!match) return <HomePage participantesGlobal={participantesGlobal} menuItems={menuItems} handleSectionClick={handleSectionClick} />;
+
+    const [, sectionKey, year] = match;
 
     return (
       <Suspense fallback={<LoadingState />} key={activeSection}>
-        {components[activeSection] || <HomePage participantesGlobal={participantesGlobal} />}
+        <SectionPage
+          sectionKey={sectionKey}
+          year={year}
+          setParticipantesGlobal={setParticipantesGlobal}
+        />
       </Suspense>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-white/20 sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-50">
+
+      {/* ── Header ── */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between h-14">
+
+            {/* Izquierda: hamburger + logo + breadcrumb */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={toggleMobileMenu}
-                className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
                 aria-label="Toggle menu"
                 aria-expanded={isMobileMenuOpen}
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <h1 className="text-xl font-bold text-blue-600">Dashboard PSPIC</h1>
+
+              {/* Logo badge */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <Activity className="w-4 h-4 text-white" />
+                </div>
+                <div className="hidden sm:block">
+                  <span className="text-sm font-semibold text-gray-900">PSPIC</span>
+                  <span className="text-sm text-gray-400 mx-1.5">·</span>
+                  <span className="text-sm text-gray-500">Ciudad Bienestar</span>
+                </div>
+                <span className="sm:hidden text-sm font-semibold text-gray-900">PSPIC</span>
+              </div>
+
+              {/* Breadcrumb */}
+              {breadcrumb && (
+                <div className="hidden md:flex items-center gap-1.5 text-sm text-gray-400">
+                  <span>/</span>
+                  <span className="text-gray-400">{breadcrumb.year}</span>
+                  <span>/</span>
+                  <span className="text-gray-700 font-medium">{breadcrumb.label}</span>
+                </div>
+              )}
             </div>
+
+            {/* Derecha: botón Inicio */}
             <button
               onClick={() => handleSectionClick("home")}
-              className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${activeSection === "home"
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activeSection === "home"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100 border border-gray-200"
+              }`}
               aria-label="Ir a inicio"
               aria-current={activeSection === "home" ? "page" : undefined}
             >
-              <Home className="w-4 h-4 mr-2" />
+              <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Inicio</span>
             </button>
           </div>
         </div>
-
-        {/* Breadcrumb */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-          <div className="flex items-center text-sm text-gray-600 truncate">
-            <Home className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="truncate">{breadcrumb}</span>
-          </div>
-        </div>
       </header>
 
+      {/* ── Layout principal ── */}
       <div className="flex">
-        {/* Sidebar */}
         <Sidebar
           isMobileMenuOpen={isMobileMenuOpen}
           closeMobileMenu={closeMobileMenu}
@@ -219,363 +302,441 @@ const Dashboard = () => {
           activeSection={activeSection}
           handleSectionClick={handleSectionClick}
         />
-
-        {/* Main Content */}
-        <main className="flex-1 lg:ml-0 p-6 lg:p-8 transition-all duration-300">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
-          </div>
+        <main className="flex-1 p-6 lg:p-8 min-w-0">
+          <div className="max-w-7xl mx-auto">{renderContent()}</div>
         </main>
       </div>
     </div>
   );
 };
 
-// Componente Sidebar separado
-const Sidebar = React.memo(({
-  isMobileMenuOpen,
-  closeMobileMenu,
-  menuItems,
-  expandedYear,
-  toggleYear,
-  activeSection,
-  handleSectionClick
-}) => (
-  <aside
-    role="navigation"
-    aria-label="Menú principal"
-    className={`${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/95 backdrop-blur-lg shadow-xl transition-transform duration-300 ease-in-out border-r border-gray-200`}
-  >
-    {isMobileMenuOpen && (
-      <div
-        className="lg:hidden fixed inset-0 bg-black/30 -z-10"
-        onClick={closeMobileMenu}
-        aria-hidden="true"
-      />
-    )}
+// ── SectionPage ───────────────────────────────────────────────────────────────
 
-    <div className="h-full overflow-y-auto">
-      {/* Header móvil */}
-      <div className="lg:hidden p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-        <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-          <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-          Navegación
-        </h2>
-        <div className="flex items-center mt-2 text-xs text-gray-500">
-          <Info className="w-3 h-3 mr-1" />
-          Selecciona un año para ver las opciones
+const SectionPage = React.memo(({ sectionKey, year, setParticipantesGlobal }) => {
+  const sectionMeta = SECTION_META[sectionKey];
+
+  const sectionInfo = {
+    participantes: {
+      title: "Participantes",
+      subtitle: "Participantes Plan de Salud Pública de Intervenciones Colectivas",
+      exportTitle: "Participantes",
+      exportId: "reporte-participantes",
+      componentKey: "DashboardParticipantes",
+    },
+    cumplimiento: {
+      title: "Cumplimiento PSPIC",
+      subtitle: "Seguimiento cumplimiento anexo técnico PSPIC",
+      exportTitle: null,
+      exportId: null,
+      componentKey: "DashboardCumplimiento",
+    },
+    indicadores: {
+      title: "Tablero de Control Indicadores CB",
+      subtitle: "Implementación indicadores CB",
+      exportTitle: null,
+      exportId: null,
+      componentKey: "DashboardIndicadores",
+    },
+    incorporacioncb: {
+      title: "Incorporación Estrategia CB",
+      subtitle: "Incorporación de la estrategia Ciudad Bienestar",
+      exportTitle: null,
+      exportId: null,
+      componentKey: "DashboardIncorporacionCB",
+    },
+    talleres: {
+      title: "Talleres",
+      subtitle: `Talleres realizados vigencia ${year}`,
+      exportTitle: null,
+      exportId: null,
+      componentKey: "DashboardTalleres",
+    },
+  };
+
+  const info = sectionInfo[sectionKey];
+  if (!info || !sectionMeta) {
+    return <div className="text-gray-500">Sección no encontrada.</div>;
+  }
+
+  const DashboardComponent = getVigenciaComponent(year, info.componentKey);
+
+  const childrenByYear = {
+    "2025": {
+      talleres: (
+        <>
+          <SummaryCardsTalleres />
+          <FiltersTalleres />
+          <ChartsTalleres />
+          <TablaTalleres />
+          <DetalleTallerModal />
+        </>
+      ),
+      incorporacioncb: (
+        <>
+          <SummaryCardsCB />
+          <FiltersCB />
+          <ChartsCB />
+          <TablaActividades />
+          <DetalleActividadModal />
+        </>
+      ),
+      cumplimiento: null,
+      indicadores: null,
+    },
+  };
+
+  return (
+    <PageLayout
+      year={year}
+      title={info.title}
+      subtitle={info.subtitle}
+      exportTitle={info.exportTitle}
+      exportId={info.exportId}
+      sectionMeta={sectionMeta}
+    >
+      {DashboardComponent ? (
+        <DashboardComponent
+          year={year}
+          setParticipantesGlobal={
+            sectionKey === "participantes" ? setParticipantesGlobal : undefined
+          }
+        >
+          {childrenByYear[year]?.[sectionKey] ?? null}
+        </DashboardComponent>
+      ) : (
+        <EmptyState
+          icon={sectionMeta.icon}
+          title={`${info.title} ${year}`}
+          description={`Esta sección permitirá visualizar la información del PSPIC para la vigencia ${year}.`}
+          sectionMeta={sectionMeta}
+        />
+      )}
+    </PageLayout>
+  );
+});
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+const Sidebar = React.memo(
+  ({
+    isMobileMenuOpen,
+    closeMobileMenu,
+    menuItems,
+    expandedYear,
+    toggleYear,
+    activeSection,
+    handleSectionClick,
+  }) => (
+    <aside
+      role="navigation"
+      aria-label="Menú principal"
+      className={`${
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+      } lg:translate-x-0 fixed lg:static top-14 lg:top-0 bottom-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out flex-shrink-0`}
+    >
+      {/* Overlay mobile */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/20 -z-10"
+          onClick={closeMobileMenu}
+          aria-hidden="true"
+        />
+      )}
+
+      <div className="h-full overflow-y-auto">
+        {/* Header mobile del sidebar */}
+        <div className="lg:hidden px-4 py-3 border-b border-gray-100">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Navegación</p>
+        </div>
+
+        <nav className="px-3 py-4" aria-label="Menú principal">
+          {AVAILABLE_YEARS.map((year) => {
+            const items = menuItems[year];
+            if (!items) return null;
+            const isExpanded = expandedYear === year;
+            const hasActiveItem = items.some((item) => activeSection === item.id);
+            return (
+              <YearSection
+                key={year}
+                year={year}
+                items={items}
+                isExpanded={isExpanded}
+                hasActiveItem={hasActiveItem}
+                toggleYear={toggleYear}
+                activeSection={activeSection}
+                handleSectionClick={handleSectionClick}
+              />
+            );
+          })}
+
+          <VigenciasIndicator />
+        </nav>
+      </div>
+    </aside>
+  )
+);
+
+// ── YearSection ───────────────────────────────────────────────────────────────
+
+const YearSection = React.memo(
+  ({
+    year,
+    items,
+    isExpanded,
+    hasActiveItem,
+    toggleYear,
+    activeSection,
+    handleSectionClick,
+  }) => {
+    const vigenciaStatus = VIGENCIAS_CONFIG[year]?.status ?? "upcoming";
+    const statusCfg = STATUS_CONFIG[vigenciaStatus] ?? STATUS_CONFIG.upcoming;
+
+    return (
+      <div className="mb-1">
+        {/* Botón año */}
+        <button
+          onClick={() => toggleYear(year)}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
+            hasActiveItem
+              ? "bg-blue-50 text-blue-800"
+              : "text-gray-700 hover:bg-gray-50"
+          }`}
+          aria-expanded={isExpanded}
+          aria-controls={`menu-${year}`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Calendar className={`w-4 h-4 flex-shrink-0 ${hasActiveItem ? "text-blue-600" : "text-gray-400"}`} />
+            <span className="font-semibold text-base">{year}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusCfg.badge}`}>
+              {statusCfg.label}
+            </span>
+          </div>
+          <ChevronDown
+            className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${
+              isExpanded ? "rotate-180" : ""
+            } ${hasActiveItem ? "text-blue-600" : "text-gray-400"}`}
+          />
+        </button>
+
+        {/* Ítems del año */}
+        <div
+          id={`menu-${year}`}
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            isExpanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="ml-3 pl-3 border-l border-gray-100 space-y-0.5">
+            {items.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSectionClick(item.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    isActive
+                      ? `${item.bg} ${item.accent} ${item.border} border`
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
+                    isActive ? item.iconBg : "bg-gray-100"
+                  }`}>
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? item.accent : "text-gray-500"}`} />
+                  </div>
+                  <span className="font-medium truncate">{item.label}</span>
+                  {isActive && (
+                    <div className={`ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0 ${item.dot}`} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+    );
+  }
+);
 
-      {/* Menú de navegación */}
-      <nav className="mt-4 lg:mt-8 px-6" aria-label="Menú principal">
-        {AVAILABLE_YEARS.map((year) => {
-          const items = menuItems[year];
-          if (!items) return null;
+// ── VigenciasIndicator ────────────────────────────────────────────────────────
 
-          const isExpanded = expandedYear === year;
-          const hasActiveItem = items.some(item => activeSection === item.id);
-
-          return (
-            <YearSection
-              key={year}
-              year={year}
-              items={items}
-              isExpanded={isExpanded}
-              hasActiveItem={hasActiveItem}
-              toggleYear={toggleYear}
-              activeSection={activeSection}
-              handleSectionClick={handleSectionClick}
-            />
-          );
-        })}
-
-        {/* Indicador de vigencias */}
-        <VigenciasIndicator />
-      </nav>
+const VigenciasIndicator = React.memo(() => (
+  <div className="mt-6 mx-1 px-3 py-3 bg-gray-50 rounded-lg border border-gray-100">
+    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      Vigencias
+    </p>
+    <div className="space-y-1.5">
+      {AVAILABLE_YEARS.map((year) => {
+        const status = VIGENCIAS_CONFIG[year]?.status ?? "upcoming";
+        const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.upcoming;
+        return (
+          <div key={year} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+              <span className="text-xs text-gray-600">{year}</span>
+            </div>
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${cfg.badge}`}>
+              {cfg.label}
+            </span>
+          </div>
+        );
+      })}
     </div>
-  </aside>
+  </div>
 ));
 
-// Componente para cada sección de año
-const YearSection = React.memo(({
-  year,
-  items,
-  isExpanded,
-  hasActiveItem,
-  toggleYear,
-  activeSection,
-  handleSectionClick
-}) => (
-  <div className="mb-6">
-    <button
-      onClick={() => toggleYear(year)}
-      className={`w-full flex items-center justify-between px-4 py-3 text-left text-sm font-semibold rounded-xl transition-all duration-300 group ${hasActiveItem
-          ? "bg-blue-50 text-blue-800 shadow-md border-l-4 border-blue-500"
-          : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
-        }`}
-      aria-expanded={isExpanded}
-      aria-controls={`menu-${year}`}
-      aria-label={`Expandir menú del año ${year}`}
-    >
-      <div className="flex items-center">
-        <Calendar className={`w-5 h-5 mr-3 ${hasActiveItem ? "text-blue-600" : "text-indigo-500"}`} />
-        <span className="text-lg font-bold">{year}</span>
-        {hasActiveItem && (
-          <div className="ml-2 w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-        )}
+// ── LoadingState ──────────────────────────────────────────────────────────────
+
+const LoadingState = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center space-y-3">
+      <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+      <p className="text-sm text-gray-500">Cargando contenido…</p>
+    </div>
+  </div>
+);
+
+// ── HomePage ──────────────────────────────────────────────────────────────────
+
+const QUICK_ACCESS = [
+  { key: "participantes", year: AVAILABLE_YEARS[0] },
+  { key: "talleres", year: AVAILABLE_YEARS[0] },
+  { key: "indicadores", year: AVAILABLE_YEARS[0] },
+  { key: "cumplimiento", year: AVAILABLE_YEARS[0] },
+];
+
+const HomePage = React.memo(({ participantesGlobal, menuItems, handleSectionClick }) => (
+  <div className="max-w-4xl mx-auto space-y-10">
+
+    {/* Hero */}
+    <div className="text-center space-y-4 pt-4">
+      <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest">
+        Pasto Salud E.S.E · Ciudad Bienestar
+      </p>
+      <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+        Plan de Salud Pública de<br />
+        <span className="text-blue-600">Intervenciones Colectivas</span>
+      </h2>
+      <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">
+        Seguimiento y análisis de indicadores, participantes y actividades del PSPIC.
+      </p>
+    </div>
+
+    {/* Logo de partículas */}
+    <div className="flex justify-center">
+      <ParticleLogo />
+    </div>
+
+    {/* Tarjeta de participantes (si hay datos) */}
+    {participantesGlobal > 0 && (
+      <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center gap-5 max-w-sm mx-auto">
+        <div className="w-12 h-12 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center flex-shrink-0">
+          <Users className="w-6 h-6 text-green-700" />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-0.5">
+            Total participantes
+          </p>
+          <p className="text-3xl font-bold text-gray-900">
+            {participantesGlobal.toLocaleString("es-CO")}
+          </p>
+        </div>
       </div>
-      <ChevronDown
-        className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""
-          } ${hasActiveItem ? "text-blue-600" : "text-gray-400 group-hover:text-indigo-500"}`}
-      />
-    </button>
+    )}
 
-    <div
-      id={`menu-${year}`}
-      className={`mt-3 transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
-    >
-      <div className="ml-6 space-y-2">
-        {items.map((item, index) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-
+    {/* Acceso rápido */}
+    <div>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+        Acceso rápido · Vigencia {AVAILABLE_YEARS[0]}
+      </p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {QUICK_ACCESS.map(({ key, year }) => {
+          const meta = SECTION_META[key];
+          if (!meta) return null;
+          const Icon = meta.icon;
+          const sectionId = `${key}-${year}`;
           return (
             <button
-              key={item.id}
-              onClick={() => handleSectionClick(item.id)}
-              className={`w-full flex items-center px-4 py-3 text-sm rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md ${isActive
-                  ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-white hover:text-gray-900"
-                }`}
-              style={{ animationDelay: `${index * 50}ms` }}
-              aria-label={item.label}
-              aria-current={isActive ? "page" : undefined}
+              key={sectionId}
+              onClick={() => handleSectionClick(sectionId)}
+              className={`group text-left p-4 rounded-xl border transition-all hover:shadow-sm ${meta.bg} ${meta.border}`}
             >
-              <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-white" : item.color}`} />
-              <span className="font-medium">{item.label}</span>
-              {isActive && (
-                <div className="ml-auto">
-                  <div className="w-2 h-2 bg-white rounded-full" />
-                </div>
-              )}
+              <div className={`w-8 h-8 rounded-lg ${meta.iconBg} flex items-center justify-center mb-3`}>
+                <Icon className={`w-4 h-4 ${meta.accent}`} />
+              </div>
+              <p className={`text-sm font-semibold ${meta.accent} mb-0.5`}>{meta.label}</p>
+              <p className="text-xs text-gray-400">{year}</p>
+              <div className={`mt-3 flex items-center gap-1 text-xs font-medium ${meta.accent} opacity-0 group-hover:opacity-100 transition-opacity`}>
+                Ver sección <ArrowRight className="w-3 h-3" />
+              </div>
             </button>
           );
         })}
       </div>
     </div>
+
   </div>
 ));
 
-// Indicador de vigencias disponibles
-const VigenciasIndicator = React.memo(() => (
-  <div className="mt-8 px-4 py-3 bg-gray-50 rounded-xl">
-    <div className="text-xs text-gray-500 text-center">
-      <div className="flex items-center justify-center mb-2">
-        <Calendar className="w-3 h-3 mr-1" />
-        <span className="font-semibold">Vigencias disponibles</span>
-      </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-center text-green-600">
-          <div className="w-2 h-2 bg-green-600 rounded-full mr-2" />
-          <span>2025 - Activa</span>
-        </div>
-        <div className="flex items-center justify-center text-blue-600">
-          <div className="w-2 h-2 bg-blue-600 rounded-full mr-2" />
-          <span>2026 - Próximamente</span>
-        </div>
-      </div>
-    </div>
-  </div>
-));
+// ── PageLayout ────────────────────────────────────────────────────────────────
 
-// Loading State
-const LoadingState = () => (
-  <div className="flex items-center justify-center min-h-[400px]">
-    <div className="text-center space-y-4">
-      <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
-      <p className="text-gray-600 font-medium">Cargando contenido...</p>
-    </div>
-  </div>
-);
-
-// HomePage
-const HomePage = React.memo(({ participantesGlobal }) => (
-  <div className="max-w-6xl mx-auto space-y-12">
-    <div className="text-center space-y-6">
-      <h3 className="text-2xl lg:text-5xl font-bold text-blue-600 leading-snug">
-        Plan de Salud Pública de Intervenciones Colectivas
-      </h3>
-      <ParticleLogo />
-      {participantesGlobal > 0 && (
-        <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl max-w-md mx-auto transform hover:scale-105 transition-transform duration-300">
-          <div className="flex items-center justify-center space-x-4">
-            <Users className="w-8 h-8 text-green-600" />
-            <div className="text-left">
-              <p className="text-sm text-gray-600 font-medium">Total Participantes</p>
-              <p className="text-3xl font-bold text-gray-900">{participantesGlobal.toLocaleString()}</p>
+const PageLayout = React.memo(
+  ({ year, title, subtitle, children, exportTitle, exportId, sectionMeta }) => {
+    const Icon = sectionMeta?.icon;
+    return (
+      <div className="space-y-6">
+        {/* Encabezado de sección */}
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+          <div className="flex items-start gap-3">
+            {Icon && sectionMeta && (
+              <div className={`w-10 h-10 rounded-xl ${sectionMeta.iconBg} border ${sectionMeta.border} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                <Icon className={`w-5 h-5 ${sectionMeta.accent}`} />
+              </div>
+            )}
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {title}{" "}
+                <span className={`${sectionMeta?.accent ?? "text-blue-600"}`}>{year}</span>
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>
             </div>
           </div>
+          {exportTitle && exportId && (
+            <ExportReportButton
+              containerId={exportId}
+              title={`${exportTitle}_${year}`}
+            />
+          )}
         </div>
-      )}
-    </div>
-  </div>
-));
 
-// PageLayout reutilizable
-const PageLayout = React.memo(({ year, title, subtitle, children, exportTitle, exportId }) => (
-  <div className="space-y-8">
-    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
-      <div>
-        <h2 className="text-3xl font-bold text-blue-600">
-          {title} {year}
-        </h2>
-        <p className="text-gray-600 mt-2">{subtitle}</p>
+        {/* Separador */}
+        <div className="border-t border-gray-100" />
+
+        {children}
       </div>
-      {exportTitle && exportId && (
-        <ExportReportButton
-          containerId={exportId}
-          title={`${exportTitle}_${year}`}
-        />
-      )}
+    );
+  }
+);
+
+// ── EmptyState ────────────────────────────────────────────────────────────────
+
+const EmptyState = React.memo(({ icon, title, description, sectionMeta }) => {
+  const Icon = icon;
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+      <div className={`inline-flex items-center justify-center w-14 h-14 ${sectionMeta?.iconBg ?? "bg-blue-50"} border ${sectionMeta?.border ?? "border-blue-200"} rounded-xl mb-5`}>
+        <Icon className={`w-7 h-7 ${sectionMeta?.accent ?? "text-blue-600"}`} />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-sm text-gray-500 max-w-sm mx-auto leading-relaxed mb-6">
+        {description}
+      </p>
+      <span className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border ${sectionMeta?.bg ?? "bg-blue-50"} ${sectionMeta?.accent ?? "text-blue-700"} ${sectionMeta?.border ?? "border-blue-200"}`}>
+        Próximamente disponible
+      </span>
     </div>
-    {children}
-  </div>
-));
-
-// Páginas específicas
-const ParticipantesPage = React.memo(({ year, setParticipantesGlobal }) => (
-  <PageLayout
-    year={year}
-    title="Participantes"
-    subtitle="Participantes Plan de Salud Pública de Intervenciones Colectivas"
-    exportTitle="Participantes"
-    exportId="reporte-participantes"
-  >
-    {year === "2025" ? (
-      <DashboardParticipantes setParticipantesGlobal={setParticipantesGlobal}>
-        <div id="reporte-participantes" className="space-y-4">
-          <SummaryCards />
-          <Filters />
-          <ChartsSection />
-        </div>
-      </DashboardParticipantes>
-    ) : (
-      <EmptyState
-        icon={Users}
-        title={`Participantes ${year}`}
-        description={`Esta sección permitirá visualizar la cobertura poblacional de las acciones del PSPIC de la vigencia ${year}`}
-        color="from-green-600 to-green-300"
-      />
-    )}
-  </PageLayout>
-));
-
-const CumplimientoPage = React.memo(({ year }) => (
-  <PageLayout
-    year={year}
-    title="Cumplimiento PSPIC"
-    subtitle="Seguimiento cumplimiento anexo técnico PSPIC"
-  >
-    {year === "2025" ? (
-      <DashboardCumplimiento />
-    ) : (
-      <EmptyState
-        icon={Target}
-        title="Seguimiento de Cumplimiento"
-        description={`Esta sección permitirá realizar el seguimiento al cumplimiento del anexo técnico PSPIC vigencia ${year}`}
-        color="from-green-600 to-green-300"
-      />
-    )}
-  </PageLayout>
-));
-
-const IndicadoresPage = React.memo(({ year }) => (
-  <PageLayout
-    year={year}
-    title="Tablero de Control Indicadores CB"
-    subtitle="Implementación indicadores CB"
-  >
-    {year === "2025" ? (
-      <DashboardIndicadores />
-    ) : (
-      <EmptyState
-        icon={BarChart3}
-        title="Indicadores"
-        description={`Esta sección permitirá realizar el seguimiento a la implementación de indicadores CB vigencia ${year}`}
-        color="from-blue-600 to-blue-500"
-      />
-    )}
-  </PageLayout>
-));
-
-const IncorporacionCBPage = React.memo(({ year }) => (
-  <PageLayout
-    year={year}
-    title="Incorporación Estrategia CB"
-    subtitle="Incorporación de la estrategia Ciudad Bienestar"
-  >
-    {year === "2025" ? (
-      <DashboardIncorporacionCB>
-        <SummaryCardsCB />
-        <FiltersCB />
-        <ChartsCB />
-        <TablaActividades />
-        <DetalleActividadModal />
-      </DashboardIncorporacionCB>
-    ) : (
-      <EmptyState
-        icon={Info}
-        title={`Incorporación Estrategia CB ${year}`}
-        description={`Esta sección permitirá realizar el seguimiento a la incorporación de la estrategia Ciudad Bienestar durante la vigencia ${year}`}
-        color="from-orange-600 to-orange-400"
-      />
-    )}
-  </PageLayout>
-));
-
-const TalleresPage = React.memo(({ year }) => (
-  <PageLayout
-    year={year}
-    title="Talleres"
-    subtitle={`Talleres realizados vigencia ${year}`}
-  >
-    {year === "2025" ? (
-      <DashboardTalleres>
-        <SummaryCardsTalleres />
-        <FiltersTalleres />
-        <ChartsTalleres />
-        <TablaTalleres />
-        <DetalleTallerModal />
-      </DashboardTalleres>
-    ) : (
-      <EmptyState
-        icon={Calendar}
-        title={`Talleres ${year}`}
-        description={`Esta sección permitirá visualizar los talleres realizados en la vigencia ${year}`}
-        color="from-purple-600 to-purple-400"
-      />
-    )}
-  </PageLayout>
-));
-
-// EmptyState
-const EmptyState = React.memo(({ icon: Icon, title, description, color }) => (
-  <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-12 border border-white/20 shadow-xl text-center">
-    <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${color} rounded-full mb-6 shadow-lg`}>
-      <Icon className="w-8 h-8 text-white" />
-    </div>
-    <h3 className="text-2xl font-bold text-gray-900 mb-4">{title}</h3>
-    <p className="text-gray-600 max-w-md mx-auto leading-relaxed">{description}</p>
-    <button
-      className={`mt-6 bg-gradient-to-r ${color} text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg`}
-      disabled
-    >
-      Próximamente
-    </button>
-  </div>
-));
+  );
+});
 
 export default Dashboard;
