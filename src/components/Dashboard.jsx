@@ -706,6 +706,8 @@ const PageLayout = React.memo(
             <ExportReportButton
               containerId={exportId}
               title={`${exportTitle}_${year}`}
+              reportTitle={`${exportTitle} ${year}`}
+              subtitle={`${subtitle} – ${year}`}
             />
           )}
         </div>

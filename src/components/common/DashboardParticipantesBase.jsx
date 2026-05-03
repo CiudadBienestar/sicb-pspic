@@ -78,12 +78,50 @@ const normalizeRows = (rows, columnMap) =>
     return normalizedRow;
   });
 
+const MESES_ES_BASE = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+const extractMonthBase = (value) => {
+  if (!value) return null;
+  const str = value.toString().trim();
+  const normalized = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  const byName = MESES_ES_BASE.find((m) => normalized.includes(m));
+  if (byName) return byName.charAt(0).toUpperCase() + byName.slice(1);
+
+  let date = null;
+  const ddmmyyyy = str.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
+  if (ddmmyyyy) {
+    const [, d, m, y] = ddmmyyyy;
+    const fullYear = y.length === 2 ? `20${y}` : y;
+    date = new Date(`${fullYear}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`);
+  } else {
+    date = new Date(str);
+  }
+
+  if (date && !isNaN(date.getTime())) {
+    const mes = MESES_ES_BASE[date.getMonth()];
+    return mes.charAt(0).toUpperCase() + mes.slice(1);
+  }
+  return null;
+};
+
 const applyFilters = (data, columnMap, filters) => {
   if (!filters || Object.keys(filters).length === 0) return data;
 
   return data.filter((item) =>
     Object.entries(filters).every(([key, value]) => {
       if (!value || value === "Todos") return true;
+
+      // Filtro especial de mes: compara contra la columna "fecha"
+      if (key === "mes") {
+        const fechaCol = columnMap["fecha"] || "Fecha";
+        const resolvedCol = findColumnKey(item, fechaCol);
+        const mes = extractMonthBase(item[resolvedCol]);
+        return normalizeText(mes) === normalizeText(value);
+      }
+
       return normalizeText(item[columnMap[key]]) === normalizeText(value);
     })
   );
@@ -125,15 +163,18 @@ const DashboardParticipantesBase = ({
     [colAcciones, colProcesos]
   );
 
-  const filteredAcciones = useMemo(
-    () => applyFilters(acciones, colAcciones, filters),
-    [acciones, colAcciones, filters]
-  );
+  // Separa filtros según su aplicabilidad:
+  // - "mes" solo aplica a acciones
+  // - el resto aplica a ambos
+  const filteredAcciones = useMemo(() => {
+    return applyFilters(acciones, colAcciones, filters);
+  }, [acciones, colAcciones, filters]);
 
-  const filteredProcesos = useMemo(
-    () => applyFilters(procesos, colProcesos, filters),
-    [procesos, colProcesos, filters]
-  );
+  const filteredProcesos = useMemo(() => {
+    // Excluir el filtro "mes" para procesos (no tienen columna Fecha)
+    const { mes: _mes, ...filtrosSinMes } = filters;
+    return applyFilters(procesos, colProcesos, filtrosSinMes);
+  }, [procesos, colProcesos, filters]);
 
   const filteredData = useMemo(() => {
     if (tab === "acciones") return filteredAcciones;
