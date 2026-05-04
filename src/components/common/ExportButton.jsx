@@ -6,7 +6,7 @@ export default function ExportReportButton({
   containerId, 
   title = "Reporte_PSPIC",
   reportTitle = "Participantes PSPIC",
-  subtitle = "Estrategia Ciudad Bienestar",
+  subtitle = "Estrategia Ciudad Bienestar – 2025",
   className = "" 
 }) {
   const [isGenerating, setIsGenerating] = useState(false);

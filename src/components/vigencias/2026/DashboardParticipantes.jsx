@@ -26,8 +26,6 @@ const filterFields = [
   { field: "entorno",   label: "Entornos Abordados" },
   { field: "actividad", label: "Actividad/Proceso" },
   { field: "zona",      label: "Zona" },
-  { field: "pic",       label: "Tecnologías del PIC", onlyTabs: ["acciones", "procesos"] },
-  { field: "mes",       label: "Mes",                 onlyTabs: ["acciones"] },
 ];
 
 const DashboardParticipantes2026 = ({ setParticipantesGlobal }) => {

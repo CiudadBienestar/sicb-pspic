@@ -37,47 +37,6 @@ const FIELD_ALIASES = {
   equipo: ["equipo/problematica", "eje/equipo", "equipo"],
   entorno: ["entornos abordados", "entorno"],
   zona: ["zona"],
-  pic: ["tecnologias del pic implementadas", "tecnologias del pic", "pic implementadas", "pic"],
-};
-
-// Nombre de meses en español para ordenar
-const MESES_ES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
-
-/**
- * Intenta extraer el mes desde un valor de fecha.
- * Acepta: Date serializable, "dd/mm/yyyy", "yyyy-mm-dd", nombre de mes, número de mes.
- */
-const extractMonth = (value) => {
-  if (!value) return null;
-  const str = value.toString().trim();
-
-  // Nombre de mes directo
-  const normalized = normalizeText(str);
-  const byName = MESES_ES.find((m) => normalized.includes(m));
-  if (byName) return byName.charAt(0).toUpperCase() + byName.slice(1);
-
-  // Intentar parsear como fecha
-  let date = null;
-
-  // dd/mm/yyyy o d/m/yyyy
-  const ddmmyyyy = str.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
-  if (ddmmyyyy) {
-    const [, d, m, y] = ddmmyyyy;
-    const fullYear = y.length === 2 ? `20${y}` : y;
-    date = new Date(`${fullYear}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`);
-  } else {
-    date = new Date(str);
-  }
-
-  if (date && !isNaN(date.getTime())) {
-    const mes = MESES_ES[date.getMonth()];
-    return mes.charAt(0).toUpperCase() + mes.slice(1);
-  }
-
-  return null;
 };
 
 const findColumnKey = (row, expectedColumn, field) => {
@@ -107,9 +66,6 @@ const FilterSelect = ({ label, field, tab, acciones, procesos, columns, filters,
   const colA = columns.acciones;
   const colP = columns.procesos;
 
-  // Campo "mes" es especial: extrae el mes de la columna "fecha" de acciones
-  const isMesField = field === "mes";
-
   const getColumnName = useCallback(
     (f, type) => (type === "acciones" ? colA[f] : colP[f]) || f,
     [colA, colP]
@@ -123,13 +79,6 @@ const FilterSelect = ({ label, field, tab, acciones, procesos, columns, filters,
 
   const getItemValue = useCallback(
     (item, f) => {
-      if (f === "mes") {
-        // Lee la columna "fecha" de acciones
-        const fechaCol = colA["fecha"] || "Fecha";
-        const resolvedCol = findColumnKey(item, fechaCol, "fecha");
-        return extractMonth(item[resolvedCol]);
-      }
-
       const getValue = (type) => {
         const columnName = getColumnName(f, type);
         const resolvedColumn = findColumnKey(item, columnName, f);
@@ -140,7 +89,7 @@ const FilterSelect = ({ label, field, tab, acciones, procesos, columns, filters,
       if (tab === "procesos") return getValue("procesos");
       return getValue("acciones") || getValue("procesos");
     },
-    [tab, getColumnName, colA]
+    [tab, getColumnName]
   );
 
   // Datos con todos los filtros aplicados excepto el actual (cascada)
@@ -173,15 +122,8 @@ const FilterSelect = ({ label, field, tab, acciones, procesos, columns, filters,
       set = collectValues(currentData);
     }
 
-    return Array.from(set).sort((a, b) => {
-      if (isMesField) {
-        const ia = MESES_ES.indexOf(a.toLowerCase());
-        const ib = MESES_ES.indexOf(b.toLowerCase());
-        return ia - ib;
-      }
-      return a.localeCompare(b, "es", { sensitivity: "base" });
-    });
-  }, [filteredData, currentData, field, getItemValue, isMesField]);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  }, [filteredData, currentData, field, getItemValue]);
 
   const valueCount = values.length;
 
@@ -256,27 +198,6 @@ const Filters = ({
     [setFilters]
   );
 
-  // Filtros visibles según el tab activo (respeta onlyTabs)
-  const visibleFields = useMemo(
-    () => filterFields.filter(({ onlyTabs }) => !onlyTabs || onlyTabs.includes(tab) || tab === "todo"),
-    [filterFields, tab]
-  );
-
-  // Cuando cambia el tab, limpiar filtros que ya no son aplicables
-  const prevTabRef = React.useRef(tab);
-  React.useEffect(() => {
-    if (prevTabRef.current !== tab) {
-      prevTabRef.current = tab;
-      const visibleFieldKeys = new Set(visibleFields.map((f) => f.field));
-      setFilters((prev) => {
-        const filtered = Object.fromEntries(
-          Object.entries(prev).filter(([k]) => visibleFieldKeys.has(k))
-        );
-        return Object.keys(filtered).length === Object.keys(prev).length ? prev : filtered;
-      });
-    }
-  }, [tab, visibleFields, setFilters]);
-
   const activeFilters = useMemo(
     () => Object.entries(filters).filter(([, v]) => v),
     [filters]
@@ -309,7 +230,7 @@ const Filters = ({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        {visibleFields.map(({ field, label }) => (
+        {filterFields.map(({ field, label }) => (
           <FilterSelect
             key={field}
             label={label}

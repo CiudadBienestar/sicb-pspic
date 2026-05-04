@@ -134,9 +134,8 @@ export const VIGENCIAS_CONFIG = {
           etnia: "Etnia",
           comuna: "Comuna/Corregimiento",
           no: "No de Identificación",
-          // Nuevas columnas 2026:
-          pic: "Tecnologías del PIC Implementadas",
-          fecha: "Fecha",
+          // Nuevas columnas 2026 — agregar aquí:
+          // nuevaColumna: "Nombre en el Sheet",
         },
         procesos: {
           equipo: "Equipo/Problemática",
@@ -153,7 +152,6 @@ export const VIGENCIAS_CONFIG = {
           salud: "Tipo de afiliación a Salud",
           no: "No de Identificación",
           // Nuevas columnas 2026:
-          pic: "Tecnologías del PIC Implementadas",
         },
       },
     },
