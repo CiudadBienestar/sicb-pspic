@@ -90,9 +90,8 @@ const SummaryCards = ({
   const colP = columns.procesos;
 
   const getIdForRow = (d) => {
-    if (tab === "acciones") return d[colA.no];
-    if (tab === "procesos") return d[colP.no];
-    return d[colA.no] || d[colP.no];
+    const id = (tab === "acciones") ? d[colA.no] : (tab === "procesos") ? d[colP.no] : (d[colA.no] || d[colP.no]);
+    return id ? id.toString().trim() : null;
   };
 
   const data = filteredData;

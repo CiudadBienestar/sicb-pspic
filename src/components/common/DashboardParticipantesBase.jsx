@@ -127,8 +127,10 @@ const applyFilters = (data, columnMap, filters) => {
   );
 };
 
-const getRowId = (row, colAcciones, colProcesos) =>
-  row[colAcciones.no] || row[colProcesos.no];
+const getRowId = (row, colAcciones, colProcesos) => {
+  const id = row[colAcciones.no] || row[colProcesos.no];
+  return id ? id.toString().trim() : null;
+};
 
 const DashboardParticipantesBase = ({
   year,
