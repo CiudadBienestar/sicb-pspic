@@ -58,7 +58,8 @@ const CARD_CONFIG = {
 };
 
 // Tarjeta individual
-const StatCard = ({ icon: Icon, label, value, configKey }) => {
+const StatCard = (props) => {
+  const { icon: Icon, label, value, configKey } = props;
   const c = CARD_CONFIG[configKey];
   return (
     <div className={`rounded-xl border p-4 flex items-start gap-3 ${c.bg} ${c.border}`}>
@@ -147,20 +148,6 @@ const SummaryCards = ({
         value={participantesTotal.toLocaleString("es-CO")}
         configKey="participantes"
       />
-
-      {/* Tarjeta específica por tab */}
-      {tab !== "todo" && (
-        <StatCard
-          icon={tab === "acciones" ? Goal : GraduationCap}
-          label={
-            tab === "acciones"
-              ? "Acciones masivas / informativas"
-              : "Procesos formativos"
-          }
-          value={participantesTotal.toLocaleString("es-CO")}
-          configKey={tab === "acciones" ? "acciones" : "procesos"}
-        />
-      )}
 
       {/* % de participación */}
       <StatCard

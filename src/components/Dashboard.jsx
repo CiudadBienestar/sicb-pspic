@@ -139,14 +139,16 @@ const STATUS_CONFIG = {
   },
 };
 
+const CURRENT_YEAR =
+  AVAILABLE_YEARS.find((year) => VIGENCIAS_CONFIG[year]?.status === "active") ||
+  AVAILABLE_YEARS[0];
+
 // ── Dashboard principal ───────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const [activeSection, setActiveSection] = useState(() =>
-    localStorageHelper.get("activeSection", "home")
-  );
+  const [activeSection, setActiveSection] = useState("home");
   const [expandedYear, setExpandedYear] = useState(() =>
-    localStorageHelper.get("expandedYear", AVAILABLE_YEARS[0])
+    localStorageHelper.get("expandedYear", CURRENT_YEAR)
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [participantesGlobal, setParticipantesGlobal] = useState(0);
@@ -600,13 +602,13 @@ const LoadingState = () => (
 // ── HomePage ──────────────────────────────────────────────────────────────────
 
 const QUICK_ACCESS = [
-  { key: "participantes", year: AVAILABLE_YEARS[0] },
-  { key: "talleres", year: AVAILABLE_YEARS[0] },
-  { key: "indicadores", year: AVAILABLE_YEARS[0] },
-  { key: "cumplimiento", year: AVAILABLE_YEARS[0] },
+  { key: "participantes", year: CURRENT_YEAR },
+  { key: "talleres", year: CURRENT_YEAR },
+  { key: "indicadores", year: CURRENT_YEAR },
+  { key: "cumplimiento", year: CURRENT_YEAR },
 ];
 
-const HomePage = React.memo(({ participantesGlobal, menuItems, handleSectionClick }) => (
+const HomePage = React.memo(({ participantesGlobal, handleSectionClick }) => (
   <div className="max-w-4xl mx-auto space-y-10">
 
     {/* Hero */}
@@ -648,7 +650,7 @@ const HomePage = React.memo(({ participantesGlobal, menuItems, handleSectionClic
     {/* Acceso rápido */}
     <div>
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-        Acceso rápido · Vigencia {AVAILABLE_YEARS[0]}
+        Acceso rápido · Vigencia {CURRENT_YEAR}
       </p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {QUICK_ACCESS.map(({ key, year }) => {
@@ -706,6 +708,8 @@ const PageLayout = React.memo(
             <ExportReportButton
               containerId={exportId}
               title={`${exportTitle}_${year}`}
+              reportTitle={`${exportTitle} ${year}`}
+              subtitle={`${subtitle} – ${year}`}
             />
           )}
         </div>

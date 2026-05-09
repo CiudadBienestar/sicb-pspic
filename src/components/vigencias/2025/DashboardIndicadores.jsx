@@ -207,7 +207,7 @@ const filtros = ["Equipo", "Indicador Aplicado", "Grupo Poblacional", "Ámbito"]
 
 function DashboardIndicadores() {
   const { data, loading, error } = useGoogleSheetData(SHEET_ID, SHEETS);
-  const indicadoresData = data.indicadores || [];
+  const indicadoresData = useMemo(() => data.indicadores || [], [data.indicadores]);
 
   const [filtrosSeleccionados, setFiltrosSeleccionados] = useState({
     Equipo: "",

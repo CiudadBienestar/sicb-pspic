@@ -333,7 +333,7 @@ const ChartsSection = ({
         </div>
       );
     },
-    [groupByField, downloadChartAsPNG, CustomTooltip]
+    [groupByField, downloadChartAsPNG]
   );
 
   // ── Campos a renderizar según tab ────────────────────────────────────────────

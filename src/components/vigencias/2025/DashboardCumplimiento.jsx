@@ -136,7 +136,7 @@ const filtros = ["Equipo", "Estado", "Entornos", "Tecnologías"];
 
 function DashboardActividades() {
   const { data, loading, error } = useGoogleSheetData(SHEET_ID, SHEETS);
-  const actividadesData = data.actividades || [];
+  const actividadesData = useMemo(() => data.actividades || [], [data.actividades]);
  const [filtrosSeleccionados, setFiltrosSeleccionados] = useState({
   Equipo: "",
   Estado: "",
