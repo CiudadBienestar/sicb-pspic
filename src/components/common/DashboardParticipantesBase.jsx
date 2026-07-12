@@ -303,8 +303,8 @@ const ParticipantesToolbar = () => {
   const { tab, setTab, showUnique, toggleUnique } = useDashboardParticipantes();
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6 p-5 bg-gradient-to-r from-blue-50 to-slate-100 rounded-2xl border-2 border-blue-300 shadow-md">
+      <div className="flex flex-wrap gap-3 sm:gap-2">
         {[
           { key: "todo", icon: "📊", label: "Ver Todo" },
           { key: "acciones", icon: "📢", label: "Acciones Informativas" },
@@ -312,29 +312,29 @@ const ParticipantesToolbar = () => {
         ].map(({ key, icon, label }) => (
           <button
             key={key}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+            className={`min-w-[150px] px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 text-left ${
               tab === key
-                ? "bg-blue-600 text-white shadow-md transform scale-105"
-                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200"
+                ? "bg-slate-900 text-white shadow-lg border border-slate-800"
+                : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
             }`}
             onClick={() => setTab(key)}
           >
-            {icon} {label}
+            <span className="block text-base leading-tight">{icon} {label}</span>
           </button>
         ))}
       </div>
 
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-600 font-medium">Mostrar:</span>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <span className="text-sm text-slate-600 font-semibold whitespace-nowrap">Mostrar:</span>
         <button
-          className={`relative inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+          className={`inline-flex items-center justify-center px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
             showUnique
-              ? "bg-green-600 text-white shadow-md"
-              : "bg-blue-600 text-white shadow-md"
-          } hover:shadow-lg transform hover:scale-105`}
+              ? "bg-emerald-600 text-white shadow-lg border border-emerald-700"
+              : "bg-blue-600 text-white shadow-lg border border-blue-700"
+          } hover:brightness-110`}
           onClick={toggleUnique}
         >
-          <span className="mr-2">{showUnique ? "👤" : "📈"}</span>
+          <span className="mr-2 text-base">{showUnique ? "👤" : "📈"}</span>
           {showUnique ? "Participantes Únicos" : "Totales"}
         </button>
       </div>

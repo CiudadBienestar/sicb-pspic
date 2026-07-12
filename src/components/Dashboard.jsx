@@ -278,11 +278,10 @@ const Dashboard = () => {
             {/* Derecha: botón Inicio */}
             <button
               onClick={() => handleSectionClick("home")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                activeSection === "home"
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeSection === "home"
                   ? "bg-blue-600 text-white"
                   : "text-gray-600 hover:bg-gray-100 border border-gray-200"
-              }`}
+                }`}
               aria-label="Ir a inicio"
               aria-current={activeSection === "home" ? "page" : undefined}
             >
@@ -432,9 +431,8 @@ const Sidebar = React.memo(
     <aside
       role="navigation"
       aria-label="Menú principal"
-      className={`${
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      } lg:translate-x-0 fixed lg:static top-14 lg:top-0 bottom-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out flex-shrink-0`}
+      className={`${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 fixed lg:static top-14 lg:top-0 bottom-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out flex-shrink-0`}
     >
       {/* Overlay mobile */}
       {isMobileMenuOpen && (
@@ -498,11 +496,10 @@ const YearSection = React.memo(
         {/* Botón año */}
         <button
           onClick={() => toggleYear(year)}
-          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
-            hasActiveItem
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${hasActiveItem
               ? "bg-blue-50 text-blue-800"
               : "text-gray-700 hover:bg-gray-50"
-          }`}
+            }`}
           aria-expanded={isExpanded}
           aria-controls={`menu-${year}`}
         >
@@ -514,18 +511,16 @@ const YearSection = React.memo(
             </span>
           </div>
           <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${
-              isExpanded ? "rotate-180" : ""
-            } ${hasActiveItem ? "text-blue-600" : "text-gray-400"}`}
+            className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${isExpanded ? "rotate-180" : ""
+              } ${hasActiveItem ? "text-blue-600" : "text-gray-400"}`}
           />
         </button>
 
         {/* Ítems del año */}
         <div
           id={`menu-${year}`}
-          className={`overflow-hidden transition-all duration-300 ease-in-out ${
-            isExpanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
-          }`}
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+            }`}
         >
           <div className="ml-3 pl-3 border-l border-gray-100 space-y-0.5">
             {items.map((item) => {
@@ -535,16 +530,14 @@ const YearSection = React.memo(
                 <button
                   key={item.id}
                   onClick={() => handleSectionClick(item.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    isActive
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${isActive
                       ? `${item.bg} ${item.accent} ${item.border} border`
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                    }`}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
-                    isActive ? item.iconBg : "bg-gray-100"
-                  }`}>
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${isActive ? item.iconBg : "bg-gray-100"
+                    }`}>
                     <Icon className={`w-3.5 h-3.5 ${isActive ? item.accent : "text-gray-500"}`} />
                   </div>
                   <span className="font-medium truncate">{item.label}</span>
@@ -614,11 +607,10 @@ const HomePage = React.memo(({ participantesGlobal, handleSectionClick }) => (
     {/* Hero */}
     <div className="text-center space-y-4 pt-4">
       <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest">
-        Pasto Salud E.S.E · Ciudad Bienestar
+        Pasto Salud E.S.E - Ciudad Bienestar
       </p>
       <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-        Plan de Salud Pública de<br />
-        <span className="text-blue-600">Intervenciones Colectivas</span>
+        Plan de Salud Pública de<span className="text-blue-600"> Intervenciones Colectivas</span>
       </h2>
       <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">
         Seguimiento y análisis de indicadores, participantes y actividades del PSPIC.
@@ -627,7 +619,9 @@ const HomePage = React.memo(({ participantesGlobal, handleSectionClick }) => (
 
     {/* Logo de partículas */}
     <div className="flex justify-center">
-      <ParticleLogo />
+      <div className="w-full max-w-2xl h-96">
+        <ParticleLogo />
+      </div>
     </div>
 
     {/* Tarjeta de participantes (si hay datos) */}
@@ -646,7 +640,7 @@ const HomePage = React.memo(({ participantesGlobal, handleSectionClick }) => (
         </div>
       </div>
     )}
-
+    <br /><br />
     {/* Acceso rápido */}
     <div>
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
