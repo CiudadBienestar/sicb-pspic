@@ -379,6 +379,50 @@ const ActiveFiltersBanner = () => {
   );
 };
 
+// Bloque imprimible (data-pdf-block) que resume los filtros aplicados,
+// para que queden reflejados en el PDF exportado. Solo se muestra si
+// hay al menos un filtro activo.
+export const ParticipantesActiveFiltersSummary = () => {
+  const { filters, filterFields, tab, showUnique } = useDashboardParticipantes();
+
+  const activeEntries = Object.entries(filters).filter(
+    ([, value]) => value && value !== "Todos"
+  );
+
+  if (activeEntries.length === 0) return null;
+
+  const labelFor = (key) =>
+    filterFields.find((f) => f.field === key)?.label || key;
+
+  const tabLabel =
+    tab === "acciones" ? "Acciones Informativas" :
+    tab === "procesos" ? "Procesos Formativos" : "Ver Todo";
+
+  return (
+    <div
+      data-pdf-block
+      className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+    >
+      <h4 className="text-sm font-semibold text-blue-900 mb-2">
+        🔍 Filtros aplicados a este reporte
+      </h4>
+      <div className="flex flex-wrap gap-2 text-xs text-blue-800">
+        <span className="px-2 py-1 rounded-full bg-blue-100 font-medium">
+          Vista: {tabLabel}
+        </span>
+        <span className="px-2 py-1 rounded-full bg-blue-100 font-medium">
+          Modo: {showUnique ? "Participantes únicos" : "Totales"}
+        </span>
+        {activeEntries.map(([key, value]) => (
+          <span key={key} className="px-2 py-1 rounded-full bg-blue-100 font-medium">
+            {labelFor(key)}: {value}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const ParticipantesFilters = () => {
   const { tab, acciones, procesos, columns, filters, setFilters, filterFields } =
     useDashboardParticipantes();
@@ -441,6 +485,7 @@ export const ParticipantesChartsSection = () => {
 const ParticipantesDefaultContent = () => (
   <div id="reporte-participantes" className="space-y-4">
     <ParticipantesSummaryCards />
+    <ParticipantesActiveFiltersSummary />
     <ParticipantesFilters />
     <ParticipantesChartsSection />
   </div>
