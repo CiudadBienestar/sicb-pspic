@@ -27,7 +27,6 @@ export default function useSheetData(sheetId, sheetsConfig, { skip = false } = {
   const [loading, setLoading] = useState(!skip);
   const [error, setError] = useState(null);
 
-  // Evitar re-fetches si sheetsConfig cambia de referencia pero no de contenido
   const configRef = useRef(sheetsConfig);
   configRef.current = sheetsConfig;
 
