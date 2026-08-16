@@ -119,7 +119,7 @@ export const VIGENCIAS_CONFIG = {
     participantes: {
       sheetId: "18wucE2vx-dTQ0OngyKogjBPnJc1sBCYQ6mHzjKJ5ULA",
       sheets: {
-        acciones: { gid: "1363663553" },   // <-- reemplazar
+        acciones: { gid: "964788065" },   // <-- reemplazar
         procesos: { gid: "619074197" },   // <-- reemplazar
       },
       // Columnas actualizadas para 2026 (pueden diferir de 2025)
