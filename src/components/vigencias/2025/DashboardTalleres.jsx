@@ -168,7 +168,7 @@ export const FiltersTalleres = () => {
   };
 
   const filterConfig = [
-    { key: "Equipo/Problemática", label: "Equipo/Problemática" },
+    { key: "Equipo", label: "Equipo" },
     { key: "Zona", label: "Zona" },
     { key: "Comuna/Corregimiento", label: "Comuna/Corregimiento" },
   ];
@@ -619,7 +619,7 @@ export const DetalleTallerModal = () => {
     { label: "Barrio", key: "Barrio", icon: MapPin },
     { label: "Comuna/Corregimiento", key: "Comuna/Corregimiento", icon: Building2 },
     { label: "Zona", key: "Zona", icon: MapPin },
-    { label: "Equipo/Problemática", key: "Equipo/Problemática", icon: Users },
+    { label: "Equipo", key: "Equipo", icon: Users },
     { label: "Poblaciones", key: "Poblaciones", icon: Users },
     { label: "Responsable", key: "Responsable", icon: Users },
   ];

@@ -20,16 +20,15 @@ const components2025 = {
 };
 
 // ── 2026 ──────────────────────────────────────────────────────
-// DashboardParticipantes ya está refactorizado y listo.
-// Los demás se activan cuando sus componentes estén implementados.
+// Todos los dashboards de 2026 reutilizan la configuración central de vigencias.
 const components2026 = {
   DashboardParticipantes: lazy(() =>
     import("../components/vigencias/2026/DashboardParticipantes")
   ),
-  DashboardCumplimiento:    null, // lazy(() => import("../components/vigencias/2026/DashboardCumplimiento")),
-  DashboardIndicadores:     null, // lazy(() => import("../components/vigencias/2026/DashboardIndicadores")),
-  DashboardIncorporacionCB: null, // lazy(() => import("../components/vigencias/2026/DashboardIncorporacionCB")),
-  DashboardTalleres:        null, // lazy(() => import("../components/vigencias/2026/DashboardTalleres")),
+  DashboardCumplimiento: lazy(() => import("../components/vigencias/2026/DashboardCumplimiento")),
+  DashboardIndicadores: lazy(() => import("../components/vigencias/2026/DashboardIndicadores")),
+  DashboardIncorporacionCB: lazy(() => import("../components/vigencias/2026/DashboardIncorporacionCB")),
+  DashboardTalleres: lazy(() => import("../components/vigencias/2026/DashboardTalleres")),
 };
 
 // ── Agregar 2027 cuando sea necesario ─────────────────────────

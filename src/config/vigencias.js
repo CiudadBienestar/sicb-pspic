@@ -158,9 +158,9 @@ export const VIGENCIAS_CONFIG = {
       },
     },
     cumplimiento: {
-      sheetId: "SHEET_ID_CUMPLIMIENTO_2026",
+      sheetId: "1Xu8_jRQ6etZPlvnc3t5mLNEgAFgg_L1sYtdzjhK9Qk4",
       sheets: {
-        actividades: { gid: "GID_ACTIVIDADES_2026" },
+        actividades: { gid: "1913714559" },
       },
       columns: {
         actividades: {
@@ -177,9 +177,10 @@ export const VIGENCIAS_CONFIG = {
       },
     },
     indicadores: {
-      sheetId: "SHEET_ID_INDICADORES_2026",
+      sheetId: "1wyHKf24e3OoeZ_GPpFOPXT_syiYTF-J6Cl8pgpCbBGI",
       sheets: {
-        indicadores: { gid: "GID_INDICADORES_2026" },
+        // El encabezado real de esta hoja está en la fila 2, no en la 1.
+        indicadores: { gid: "36239036", headerRow: 2 },
       },
       columns: {
         indicadores: {
@@ -198,9 +199,9 @@ export const VIGENCIAS_CONFIG = {
       },
     },
     incorporacioncb: {
-      sheetId: "SHEET_ID_CB_2026",
+      sheetId: "1ENchr9zbElFb4c1m2qdPFjaCaUl8YHrOd4v6owMXLkM",
       sheets: {
-        incorporacionCB: { gid: "GID_CB_2026" },
+        incorporacionCB: { gid: "1634857209" },
       },
       columns: {
         incorporacionCB: {
@@ -212,9 +213,9 @@ export const VIGENCIAS_CONFIG = {
       },
     },
     talleres: {
-      sheetId: "SHEET_ID_TALLERES_2026",
+      sheetId: "1j_yDXClcE5oopGQtDuO9_QvyVFnod5d4wkXDO6xNze4",
       sheets: {
-        talleres: { gid: "GID_TALLERES_2026" },
+        talleres: { gid: "808270317" },
       },
       columns: {
         talleres: {
@@ -246,5 +247,6 @@ export function getVigenciaConfig(year, section) {
 export function isVigenciaReady(year, section) {
   const cfg = getVigenciaConfig(year, section);
   if (!cfg) return false;
-  return !cfg.sheetId.startsWith("SHEET_ID_");
+  return !cfg.sheetId.startsWith("SHEET_ID_") &&
+    Object.values(cfg.sheets ?? {}).every(({ gid }) => gid && !String(gid).startsWith("GID_"));
 }

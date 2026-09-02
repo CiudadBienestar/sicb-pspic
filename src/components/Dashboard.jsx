@@ -28,20 +28,36 @@ import { AVAILABLE_YEARS, VIGENCIAS_CONFIG } from "../config/vigencias";
 import { getVigenciaComponent } from "../config/vigenciaComponents";
 
 import {
-  SummaryCardsTalleres,
-  FiltersTalleres,
-  ChartsTalleres,
-  TablaTalleres,
-  DetalleTallerModal,
+  SummaryCardsTalleres as SummaryCardsTalleres2025,
+  FiltersTalleres as FiltersTalleres2025,
+  ChartsTalleres as ChartsTalleres2025,
+  TablaTalleres as TablaTalleres2025,
+  DetalleTallerModal as DetalleTallerModal2025,
 } from "./vigencias/2025/DashboardTalleres";
 
 import {
-  SummaryCardsCB,
-  FiltersCB,
-  ChartsCB,
-  TablaActividades,
-  DetalleActividadModal,
+  SummaryCardsCB as SummaryCardsCB2025,
+  FiltersCB as FiltersCB2025,
+  ChartsCB as ChartsCB2025,
+  TablaActividades as TablaActividades2025,
+  DetalleActividadModal as DetalleActividadModal2025,
 } from "./vigencias/2025/DashboardIncorporacionCB";
+
+import {
+  SummaryCardsTalleres as SummaryCardsTalleres2026,
+  FiltersTalleres as FiltersTalleres2026,
+  ChartsTalleres as ChartsTalleres2026,
+  TablaTalleres as TablaTalleres2026,
+  DetalleTallerModal as DetalleTallerModal2026,
+} from "./vigencias/2026/DashboardTalleres";
+
+import {
+  SummaryCardsCB as SummaryCardsCB2026,
+  FiltersCB as FiltersCB2026,
+  ChartsCB as ChartsCB2026,
+  TablaActividades as TablaActividades2026,
+  DetalleActividadModal as DetalleActividadModal2026,
+} from "./vigencias/2026/DashboardIncorporacionCB";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -365,20 +381,42 @@ const SectionPage = React.memo(({ sectionKey, year, setParticipantesGlobal }) =>
     "2025": {
       talleres: (
         <>
-          <SummaryCardsTalleres />
-          <FiltersTalleres />
-          <ChartsTalleres />
-          <TablaTalleres />
-          <DetalleTallerModal />
+          <SummaryCardsTalleres2025 />
+          <FiltersTalleres2025 />
+          <ChartsTalleres2025 />
+          <TablaTalleres2025 />
+          <DetalleTallerModal2025 />
         </>
       ),
       incorporacioncb: (
         <>
-          <SummaryCardsCB />
-          <FiltersCB />
-          <ChartsCB />
-          <TablaActividades />
-          <DetalleActividadModal />
+          <SummaryCardsCB2025 />
+          <FiltersCB2025 />
+          <ChartsCB2025 />
+          <TablaActividades2025 />
+          <DetalleActividadModal2025 />
+        </>
+      ),
+      cumplimiento: null,
+      indicadores: null,
+    },
+    "2026": {
+      talleres: (
+        <>
+          <SummaryCardsTalleres2026 />
+          <FiltersTalleres2026 />
+          <ChartsTalleres2026 />
+          <TablaTalleres2026 />
+          <DetalleTallerModal2026 />
+        </>
+      ),
+      incorporacioncb: (
+        <>
+          <SummaryCardsCB2026 />
+          <FiltersCB2026 />
+          <ChartsCB2026 />
+          <TablaActividades2026 />
+          <DetalleActividadModal2026 />
         </>
       ),
       cumplimiento: null,
@@ -396,14 +434,16 @@ const SectionPage = React.memo(({ sectionKey, year, setParticipantesGlobal }) =>
       sectionMeta={sectionMeta}
     >
       {DashboardComponent ? (
-        <DashboardComponent
+        <SectionErrorBoundary sectionId={`${sectionKey}-${year}`}>
+          <DashboardComponent
           year={year}
           setParticipantesGlobal={
             sectionKey === "participantes" ? setParticipantesGlobal : undefined
           }
         >
           {childrenByYear[year]?.[sectionKey] ?? null}
-        </DashboardComponent>
+          </DashboardComponent>
+        </SectionErrorBoundary>
       ) : (
         <EmptyState
           icon={sectionMeta.icon}
@@ -591,6 +631,33 @@ const LoadingState = () => (
     </div>
   </div>
 );
+
+class SectionErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidUpdate(previousProps) {
+    if (previousProps.sectionId !== this.props.sectionId && this.state.error) {
+      this.setState({ error: null });
+    }
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <h3 className="font-semibold text-red-900">No fue posible mostrar esta sección</h3>
+        <p className="text-sm text-red-800 mt-2">Revisa la configuración de la fuente de datos e intenta abrir la sección nuevamente.</p>
+      </div>
+    );
+  }
+}
 
 // ── HomePage ──────────────────────────────────────────────────────────────────
 

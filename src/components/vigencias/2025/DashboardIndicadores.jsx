@@ -4,17 +4,16 @@ import { X } from "lucide-react";
 
 const SHEET_ID = "1yzHOO9ZHq9UFjNz4x73LGjv1SQ4DEUrZjzbXy8xX3i0";
 const SHEETS = {
-  indicadores: { gid: "36239036" },
+  // La primera fila está vacía; los encabezados reales comienzan en la fila 2.
+  indicadores: { gid: "36239036", headerRow: 2 },
 };
 
 const columnasDeseadas = [
   "Equipo",
   "Producto",
   "Actividad",
-  "Grupo Poblacional",
   "Indicador Aplicado",
   "Tipo de Indicador",
-  "Ámbito",
   "Meta 2025",
   "Resultado 2025",
   "Estado Indicador",
