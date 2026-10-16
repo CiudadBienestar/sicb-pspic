@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from "react";
+import { extractMonthFromDate, MESES_ES } from "../../utils/date";
 
 /**
  * Filters — Genérico para cualquier vigencia.
@@ -38,46 +39,6 @@ const FIELD_ALIASES = {
   entorno: ["entornos abordados", "entorno"],
   zona: ["zona"],
   pic: ["tecnologias del pic implementadas", "tecnologias del pic", "pic implementadas", "pic"],
-};
-
-// Nombre de meses en español para ordenar
-const MESES_ES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
-
-/**
- * Intenta extraer el mes desde un valor de fecha.
- * Acepta: Date serializable, "dd/mm/yyyy", "yyyy-mm-dd", nombre de mes, número de mes.
- */
-const extractMonth = (value) => {
-  if (!value) return null;
-  const str = value.toString().trim();
-
-  // Nombre de mes directo
-  const normalized = normalizeText(str);
-  const byName = MESES_ES.find((m) => normalized.includes(m));
-  if (byName) return byName.charAt(0).toUpperCase() + byName.slice(1);
-
-  // Intentar parsear como fecha
-  let date = null;
-
-  // dd/mm/yyyy o d/m/yyyy
-  const ddmmyyyy = str.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
-  if (ddmmyyyy) {
-    const [, d, m, y] = ddmmyyyy;
-    const fullYear = y.length === 2 ? `20${y}` : y;
-    date = new Date(`${fullYear}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`);
-  } else {
-    date = new Date(str);
-  }
-
-  if (date && !isNaN(date.getTime())) {
-    const mes = MESES_ES[date.getMonth()];
-    return mes.charAt(0).toUpperCase() + mes.slice(1);
-  }
-
-  return null;
 };
 
 const findColumnKey = (row, expectedColumn, field) => {
@@ -127,7 +88,7 @@ const FilterSelect = ({ label, field, tab, acciones, procesos, columns, filters,
         // Lee la columna "fecha" de acciones
         const fechaCol = colA["fecha"] || "Fecha";
         const resolvedCol = findColumnKey(item, fechaCol, "fecha");
-        const value = extractMonth(item[resolvedCol]);
+        const value = extractMonthFromDate(item[resolvedCol]);
         return value;
       }
 

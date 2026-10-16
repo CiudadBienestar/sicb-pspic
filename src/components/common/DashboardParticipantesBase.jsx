@@ -9,6 +9,7 @@ import useSheetData from "../../hooks/useSheetData";
 import SummaryCards from "./SummaryCards";
 import Filters from "./Filters";
 import ChartsSection from "./ChartsSection";
+import { extractMonthFromDate } from "../../utils/date";
 
 const DEFAULT_CAMPOS_GENERALES = [
   { field: "curso", label: "Curso de Vida" },
@@ -78,35 +79,6 @@ const normalizeRows = (rows, columnMap) =>
     return normalizedRow;
   });
 
-const MESES_ES_BASE = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
-
-const extractMonthBase = (value) => {
-  if (!value) return null;
-  const str = value.toString().trim();
-  const normalized = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-  const byName = MESES_ES_BASE.find((m) => normalized.includes(m));
-  if (byName) return byName.charAt(0).toUpperCase() + byName.slice(1);
-
-  let date = null;
-  const ddmmyyyy = str.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
-  if (ddmmyyyy) {
-    const [, d, m, y] = ddmmyyyy;
-    const fullYear = y.length === 2 ? `20${y}` : y;
-    date = new Date(`${fullYear}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`);
-  } else {
-    date = new Date(str);
-  }
-
-  if (date && !isNaN(date.getTime())) {
-    const mes = MESES_ES_BASE[date.getMonth()];
-    return mes.charAt(0).toUpperCase() + mes.slice(1);
-  }
-  return null;
-};
-
 const applyFilters = (data, columnMap, filters) => {
   if (!filters || Object.keys(filters).length === 0) return data;
 
@@ -118,7 +90,7 @@ const applyFilters = (data, columnMap, filters) => {
       if (key === "mes") {
         const fechaCol = columnMap["fecha"] || "Fecha";
         const resolvedCol = findColumnKey(item, fechaCol);
-        const mes = extractMonthBase(item[resolvedCol]);
+        const mes = extractMonthFromDate(item[resolvedCol]);
         return normalizeText(mes) === normalizeText(value);
       }
 
